@@ -1,0 +1,502 @@
+{
+  "MFG_8933ac0a8371": {
+    "source_url": "https://docs.cvte.com/docs/mfg/qms-sop",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/qms-sop",
+    "url_hash": "8933ac0a8371",
+    "title": "质量管理",
+    "md_hash": "b697c1ac",
+    "filename": "MFG_8933ac0a8371_质量管理.md",
+    "doc_id": "qms-sop",
+    "crawled_at": "2026-06-10 15:57:53"
+  },
+  "MFG_e8fd84ff5ae7": {
+    "source_url": "https://docs.cvte.com/docs/mfg/mfg-1gvrb6d769k4s",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/mfg-1gvrb6d769k4s",
+    "url_hash": "e8fd84ff5ae7",
+    "title": "售后维修费用转嫁（客责）",
+    "md_hash": "2d495083",
+    "filename": "MFG_e8fd84ff5ae7_售后维修费用转嫁（客责）.md",
+    "doc_id": "mfg-1gvrb6d769k4s",
+    "crawled_at": "2026-06-10 15:57:54"
+  },
+  "MFG_189eb42d48fc": {
+    "source_url": "https://docs.cvte.com/docs/mfg/mfg-1gabrtmj784v7",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/mfg-1gabrtmj784v7",
+    "url_hash": "189eb42d48fc",
+    "title": "供应商质量管理",
+    "md_hash": "4c118f6b",
+    "filename": "MFG_189eb42d48fc_供应商质量管理.md",
+    "doc_id": "mfg-1gabrtmj784v7",
+    "crawled_at": "2026-06-10 15:57:54"
+  },
+  "MFG_797c92056b48": {
+    "source_url": "https://docs.cvte.com/docs/mfg/mfg-1gabs089knlde",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/mfg-1gabs089knlde",
+    "url_hash": "797c92056b48",
+    "title": "供方技术交流管理",
+    "md_hash": "c199cb4f",
+    "filename": "MFG_797c92056b48_供方技术交流管理.md",
+    "doc_id": "mfg-1gabs089knlde",
+    "crawled_at": "2026-06-10 15:57:55"
+  },
+  "MFG_84bea84679c7": {
+    "source_url": "https://docs.cvte.com/docs/mfg/mfg-1gabs0ikcnrjr",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/mfg-1gabs0ikcnrjr",
+    "url_hash": "84bea84679c7",
+    "title": "供方技术交流管理-供应商",
+    "md_hash": "f13bdc15",
+    "filename": "MFG_84bea84679c7_供方技术交流管理-供应商.md",
+    "doc_id": "mfg-1gabs0ikcnrjr",
+    "crawled_at": "2026-06-10 15:57:56"
+  },
+  "MFG_fd495395331f": {
+    "source_url": "https://docs.cvte.com/docs/mfg/mfg-1gebvqg3ktkt7",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/mfg-1gebvqg3ktkt7",
+    "url_hash": "fd495395331f",
+    "title": "供方技术交流-供应商版本",
+    "md_hash": "49f28588",
+    "filename": "MFG_fd495395331f_供方技术交流-供应商版本.md",
+    "doc_id": "mfg-1gebvqg3ktkt7",
+    "crawled_at": "2026-06-10 15:57:56"
+  },
+  "MFG_b16c7e2b3e0a": {
+    "source_url": "https://docs.cvte.com/docs/mfg/mfg-1gabs0tv2hvku",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/mfg-1gabs0tv2hvku",
+    "url_hash": "b16c7e2b3e0a",
+    "title": "物料参数案例库",
+    "md_hash": "f1d1ecbf",
+    "filename": "MFG_b16c7e2b3e0a_物料参数案例库.md",
+    "doc_id": "mfg-1gabs0tv2hvku",
+    "crawled_at": "2026-06-10 15:57:57"
+  },
+  "MFG_caa21c6a3bea": {
+    "source_url": "https://docs.cvte.com/docs/mfg/mfg-1gabs3ofatcm1",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/mfg-1gabs3ofatcm1",
+    "url_hash": "caa21c6a3bea",
+    "title": "物料参数管理",
+    "md_hash": "d626f6ef",
+    "filename": "MFG_caa21c6a3bea_物料参数管理.md",
+    "doc_id": "mfg-1gabs3ofatcm1",
+    "crawled_at": "2026-06-10 15:57:57"
+  },
+  "MFG_4fa94cfe6e3c": {
+    "source_url": "https://docs.cvte.com/docs/mfg/mfg-1gabs5pkqd922",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/mfg-1gabs5pkqd922",
+    "url_hash": "4fa94cfe6e3c",
+    "title": "供应商测试数据导入",
+    "md_hash": "e764c942",
+    "filename": "MFG_4fa94cfe6e3c_供应商测试数据导入.md",
+    "doc_id": "mfg-1gabs5pkqd922",
+    "crawled_at": "2026-06-10 15:57:58"
+  },
+  "MFG_d48ff3782cdc": {
+    "source_url": "https://docs.cvte.com/docs/mfg/mfg-1ge440a81qohn",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/mfg-1ge440a81qohn",
+    "url_hash": "d48ff3782cdc",
+    "title": "供应商测试数据导入(供应商版本)",
+    "md_hash": "8f55c0df",
+    "filename": "MFG_d48ff3782cdc_供应商测试数据导入(供应商版本).md",
+    "doc_id": "mfg-1ge440a81qohn",
+    "crawled_at": "2026-06-10 15:57:59"
+  },
+  "MFG_9f6a3a67ece6": {
+    "source_url": "https://docs.cvte.com/docs/mfg/mfg-1gabs6jv840p1",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/mfg-1gabs6jv840p1",
+    "url_hash": "9f6a3a67ece6",
+    "title": "供应商测试数据对接接口",
+    "md_hash": "6fabfbb9",
+    "filename": "MFG_9f6a3a67ece6_供应商测试数据对接接口.md",
+    "doc_id": "mfg-1gabs6jv840p1",
+    "crawled_at": "2026-06-10 15:57:59"
+  },
+  "MFG_3d013f18dfd0": {
+    "source_url": "https://docs.cvte.com/docs/mfg/mfg-1gns2cesl4qp3",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/mfg-1gns2cesl4qp3",
+    "url_hash": "3d013f18dfd0",
+    "title": "器件原始测试数据对接接口文档",
+    "md_hash": "a90e9355",
+    "filename": "MFG_3d013f18dfd0_器件原始测试数据对接接口文档.md",
+    "doc_id": "mfg-1gns2cesl4qp3",
+    "crawled_at": "2026-06-10 15:58:00"
+  },
+  "MFG_9960923cb604": {
+    "source_url": "https://docs.cvte.com/docs/mfg/mfg-1gclhqug28amo",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/mfg-1gclhqug28amo",
+    "url_hash": "9960923cb604",
+    "title": "物料预警",
+    "md_hash": "aa55c510",
+    "filename": "MFG_9960923cb604_物料预警.md",
+    "doc_id": "mfg-1gclhqug28amo",
+    "crawled_at": "2026-06-10 15:58:00"
+  },
+  "MFG_38871daf8387": {
+    "source_url": "https://docs.cvte.com/docs/mfg/mfg-1gclja7obhh53",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/mfg-1gclja7obhh53",
+    "url_hash": "38871daf8387",
+    "title": "物料统计查询",
+    "md_hash": "966d6b1b",
+    "filename": "MFG_38871daf8387_物料统计查询.md",
+    "doc_id": "mfg-1gclja7obhh53",
+    "crawled_at": "2026-06-10 15:58:01"
+  },
+  "MFG_dc43065f9c6a": {
+    "source_url": "https://docs.cvte.com/docs/mfg/mfg-1gabs41r4idpe",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/mfg-1gabs41r4idpe",
+    "url_hash": "dc43065f9c6a",
+    "title": "供应商参数管理",
+    "md_hash": "e904f7ee",
+    "filename": "MFG_dc43065f9c6a_供应商参数管理.md",
+    "doc_id": "mfg-1gabs41r4idpe",
+    "crawled_at": "2026-06-10 15:58:02"
+  },
+  "MFG_47025ea02462": {
+    "source_url": "https://docs.cvte.com/docs/mfg/mfg-1gabs54dhhcig",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/mfg-1gabs54dhhcig",
+    "url_hash": "47025ea02462",
+    "title": "物料参数导入模版",
+    "md_hash": "eb442df3",
+    "filename": "MFG_47025ea02462_物料参数导入模版.md",
+    "doc_id": "mfg-1gabs54dhhcig",
+    "crawled_at": "2026-06-10 15:58:02"
+  },
+  "MFG_348c1383d0c0": {
+    "source_url": "https://docs.cvte.com/docs/mfg/mfg-1gclbi30glq48",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/mfg-1gclbi30glq48",
+    "url_hash": "348c1383d0c0",
+    "title": "器件预警规则",
+    "md_hash": "9da3d639",
+    "filename": "MFG_348c1383d0c0_器件预警规则.md",
+    "doc_id": "mfg-1gclbi30glq48",
+    "crawled_at": "2026-06-10 15:58:03"
+  },
+  "MFG_c0afcb3e6885": {
+    "source_url": "https://docs.cvte.com/docs/mfg/mfg-1gclcbkjcfcjj",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/mfg-1gclcbkjcfcjj",
+    "url_hash": "c0afcb3e6885",
+    "title": "物料控制图规则",
+    "md_hash": "03121cdc",
+    "filename": "MFG_c0afcb3e6885_物料控制图规则.md",
+    "doc_id": "mfg-1gclcbkjcfcjj",
+    "crawled_at": "2026-06-10 15:58:03"
+  },
+  "MFG_1f9fbfeee164": {
+    "source_url": "https://docs.cvte.com/docs/mfg/mfg-1gkpo42d4lg90",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/mfg-1gkpo42d4lg90",
+    "url_hash": "1f9fbfeee164",
+    "title": "供应商数据对接实施标准",
+    "md_hash": "782fca62",
+    "filename": "MFG_1f9fbfeee164_供应商数据对接实施标准.md",
+    "doc_id": "mfg-1gkpo42d4lg90",
+    "crawled_at": "2026-06-10 15:58:04"
+  },
+  "MFG_c9f7950fdf09": {
+    "source_url": "https://docs.cvte.com/docs/mfg/mfg-1gdjm4lph5uq5",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/mfg-1gdjm4lph5uq5",
+    "url_hash": "c9f7950fdf09",
+    "title": "进料检验尺寸SPC分析",
+    "md_hash": "eb1e3a9a",
+    "filename": "MFG_c9f7950fdf09_进料检验尺寸SPC分析.md",
+    "doc_id": "mfg-1gdjm4lph5uq5",
+    "crawled_at": "2026-06-10 15:58:05"
+  },
+  "MFG_3945e5182516": {
+    "source_url": "https://docs.cvte.com/docs/mfg/mfg-1ghqd21b0suv7",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/mfg-1ghqd21b0suv7",
+    "url_hash": "3945e5182516",
+    "title": "制程稽核问题",
+    "md_hash": "89cdf812",
+    "filename": "MFG_3945e5182516_制程稽核问题.md",
+    "doc_id": "mfg-1ghqd21b0suv7",
+    "crawled_at": "2026-06-10 15:58:05"
+  },
+  "MFG_cbb9ed3752d2": {
+    "source_url": "https://docs.cvte.com/docs/mfg/mfg-1gidfkj0bcvaj",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/mfg-1gidfkj0bcvaj",
+    "url_hash": "cbb9ed3752d2",
+    "title": "质量责任处理闭环",
+    "md_hash": "0f3141c3",
+    "filename": "MFG_cbb9ed3752d2_质量责任处理闭环.md",
+    "doc_id": "mfg-1gidfkj0bcvaj",
+    "crawled_at": "2026-06-10 15:58:06"
+  },
+  "MFG_a73891098687": {
+    "source_url": "https://docs.cvte.com/docs/mfg/mfg-1gidhrg34umf7",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/mfg-1gidhrg34umf7",
+    "url_hash": "a73891098687",
+    "title": "质量保证金&质量保证金支付单",
+    "md_hash": "3adcb338",
+    "filename": "MFG_a73891098687_质量保证金&质量保证金支付单.md",
+    "doc_id": "mfg-1gidhrg34umf7",
+    "crawled_at": "2026-06-10 15:58:07"
+  },
+  "MFG_639a12c8775a": {
+    "source_url": "https://docs.cvte.com/docs/mfg/mfg-1gidhse7vuo1d",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/mfg-1gidhse7vuo1d",
+    "url_hash": "639a12c8775a",
+    "title": "暂停支付货款通知单&解除暂停支付货款通知单",
+    "md_hash": "b91369a4",
+    "filename": "MFG_639a12c8775a_暂停支付货款通知单&解除暂停支付货款通知单.md",
+    "doc_id": "mfg-1gidhse7vuo1d",
+    "crawled_at": "2026-06-10 15:58:07"
+  },
+  "MFG_413bfce7f75d": {
+    "source_url": "https://docs.cvte.com/docs/mfg/mfg-1gidhso1jutcv",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/mfg-1gidhso1jutcv",
+    "url_hash": "413bfce7f75d",
+    "title": "赠品入库&特殊折扣订单抵扣",
+    "md_hash": "6ddc3f05",
+    "filename": "MFG_413bfce7f75d_赠品入库&特殊折扣订单抵扣.md",
+    "doc_id": "mfg-1gidhso1jutcv",
+    "crawled_at": "2026-06-10 15:58:08"
+  },
+  "MFG_7bc4fe986d4f": {
+    "source_url": "https://docs.cvte.com/docs/mfg/mfg-1gm8v6bjd08cf",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/mfg-1gm8v6bjd08cf",
+    "url_hash": "7bc4fe986d4f",
+    "title": "EWP分析-研发质量",
+    "md_hash": "35875f44",
+    "filename": "MFG_7bc4fe986d4f_EWP分析-研发质量.md",
+    "doc_id": "mfg-1gm8v6bjd08cf",
+    "crawled_at": "2026-06-10 15:58:08"
+  },
+  "MFG_239629025f80": {
+    "source_url": "https://docs.cvte.com/docs/mfg/mfg-1gm8v6gtd5d38",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/mfg-1gm8v6gtd5d38",
+    "url_hash": "239629025f80",
+    "title": "整改组分析",
+    "md_hash": "493cc661",
+    "filename": "MFG_239629025f80_整改组分析.md",
+    "doc_id": "mfg-1gm8v6gtd5d38",
+    "crawled_at": "2026-06-10 15:58:09"
+  },
+  "MFG_d194d514e369": {
+    "source_url": "https://docs.cvte.com/docs/mfg/mfg-1h6he8pnbo9l9",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/mfg-1h6he8pnbo9l9",
+    "url_hash": "d194d514e369",
+    "title": "问题管理",
+    "md_hash": "10ab88b6",
+    "filename": "MFG_d194d514e369_问题管理.md",
+    "doc_id": "mfg-1h6he8pnbo9l9",
+    "crawled_at": "2026-06-10 15:58:10"
+  },
+  "MFG_b83ea712dc01": {
+    "source_url": "https://docs.cvte.com/docs/mfg/mfg-1gb2cu71c8qa8",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/mfg-1gb2cu71c8qa8",
+    "url_hash": "b83ea712dc01",
+    "title": "新增试图页面",
+    "md_hash": "dd2ec13d",
+    "filename": "MFG_b83ea712dc01_新增试图页面.md",
+    "doc_id": "mfg-1gb2cu71c8qa8",
+    "crawled_at": "2026-06-10 15:58:11"
+  },
+  "MFG_5b50f88835da": {
+    "source_url": "https://docs.cvte.com/docs/mfg/mfg-1gah4lqvt62g3",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/mfg-1gah4lqvt62g3",
+    "url_hash": "5b50f88835da",
+    "title": "IQC\\IPQC\\OQC是什么？",
+    "md_hash": "7114d93a",
+    "filename": "MFG_5b50f88835da_IQC_IPQC_OQC是什么？.md",
+    "doc_id": "mfg-1gah4lqvt62g3",
+    "crawled_at": "2026-06-10 15:58:12"
+  },
+  "MFG_c74f19f5cf82": {
+    "source_url": "https://docs.cvte.com/docs/mfg/mfg-1gjibe4r3hm2l",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/mfg-1gjibe4r3hm2l",
+    "url_hash": "c74f19f5cf82",
+    "title": "包装采集报检验批号为空",
+    "md_hash": "45c01adf",
+    "filename": "MFG_c74f19f5cf82_包装采集报检验批号为空.md",
+    "doc_id": "mfg-1gjibe4r3hm2l",
+    "crawled_at": "2026-06-10 15:58:13"
+  },
+  "MFG_e9e338624f0d": {
+    "source_url": "https://docs.cvte.com/docs/mfg/mfg-1gutrsk78t113",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/mfg-1gutrsk78t113",
+    "url_hash": "e9e338624f0d",
+    "title": "API接口调用",
+    "md_hash": "65f5a44a",
+    "filename": "MFG_e9e338624f0d_API接口调用.md",
+    "doc_id": "mfg-1gutrsk78t113",
+    "crawled_at": "2026-06-10 15:58:14"
+  },
+  "MFG_6bbd8840e06c": {
+    "source_url": "https://docs.cvte.com/docs/mfg/mfg-1h37gs0s24hvs",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/mfg-1h37gs0s24hvs",
+    "url_hash": "6bbd8840e06c",
+    "title": "知识中心权限申请受理",
+    "md_hash": "77ad05f8",
+    "filename": "MFG_6bbd8840e06c_知识中心权限申请受理.md",
+    "doc_id": "mfg-1h37gs0s24hvs",
+    "crawled_at": "2026-06-10 15:58:14"
+  },
+  "MFG_bf872c99f463": {
+    "source_url": "https://docs.cvte.com/docs/mfg/mfg-1gs62sc13fmao",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/mfg-1gs62sc13fmao",
+    "url_hash": "bf872c99f463",
+    "title": "知识中心已有文件查询权限开通",
+    "md_hash": "8371a4cb",
+    "filename": "MFG_bf872c99f463_知识中心已有文件查询权限开通.md",
+    "doc_id": "mfg-1gs62sc13fmao",
+    "crawled_at": "2026-06-10 15:58:15"
+  },
+  "MFG_2f9b970f94e6": {
+    "source_url": "https://docs.cvte.com/docs/mfg/mfg-1h37fhlqiigat",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/mfg-1h37fhlqiigat",
+    "url_hash": "2f9b970f94e6",
+    "title": "文件作废",
+    "md_hash": "bb32ad41",
+    "filename": "MFG_2f9b970f94e6_文件作废.md",
+    "doc_id": "mfg-1h37fhlqiigat",
+    "crawled_at": "2026-06-10 15:58:16"
+  },
+  "MFG_7d80964e722b": {
+    "source_url": "https://docs.cvte.com/docs/mfg/mfg-1h37flr0iukuc",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/mfg-1h37flr0iukuc",
+    "url_hash": "7d80964e722b",
+    "title": "文件版本升级",
+    "md_hash": "8ea56557",
+    "filename": "MFG_7d80964e722b_文件版本升级.md",
+    "doc_id": "mfg-1h37flr0iukuc",
+    "crawled_at": "2026-06-10 15:58:16"
+  },
+  "MFG_328ec9fb2bf1": {
+    "source_url": "https://docs.cvte.com/docs/mfg/mfg-1h2n10gp9g66h",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/mfg-1h2n10gp9g66h",
+    "url_hash": "328ec9fb2bf1",
+    "title": "条码重复入库",
+    "md_hash": "10dbbf6d",
+    "filename": "MFG_328ec9fb2bf1_条码重复入库.md",
+    "doc_id": "mfg-1h2n10gp9g66h",
+    "crawled_at": "2026-06-10 15:58:17"
+  },
+  "MFG_f53038363d0a": {
+    "source_url": "https://docs.cvte.com/docs/mfg/mfg-1h9gn2nj5g2iu",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/mfg-1h9gn2nj5g2iu",
+    "url_hash": "f53038363d0a",
+    "title": "单据不允许重复接收",
+    "md_hash": "aba9e751",
+    "filename": "MFG_f53038363d0a_单据不允许重复接收.md",
+    "doc_id": "mfg-1h9gn2nj5g2iu",
+    "crawled_at": "2026-06-10 15:58:18"
+  },
+  "MFG_9d9c5a5a3701": {
+    "source_url": "https://docs.cvte.com/docs/mfg/mfg-1h9gpct9q9obr",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/mfg-1h9gpct9q9obr",
+    "url_hash": "9d9c5a5a3701",
+    "title": "存储周期未配置",
+    "md_hash": "f4a98b99",
+    "filename": "MFG_9d9c5a5a3701_存储周期未配置.md",
+    "doc_id": "mfg-1h9gpct9q9obr",
+    "crawled_at": "2026-06-10 15:58:18"
+  },
+  "MFG_c816e45d7d8e": {
+    "source_url": "https://docs.cvte.com/docs/mfg/mfg-1h9gqemv8otac",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/mfg-1h9gqemv8otac",
+    "url_hash": "c816e45d7d8e",
+    "title": "禁用料不允许接收",
+    "md_hash": "b50dc050",
+    "filename": "MFG_c816e45d7d8e_禁用料不允许接收.md",
+    "doc_id": "mfg-1h9gqemv8otac",
+    "crawled_at": "2026-06-10 15:58:19"
+  },
+  "MFG_bed56ef9aca7": {
+    "source_url": "https://docs.cvte.com/docs/mfg/mfg-1h9h4kdvn71f7",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/mfg-1h9h4kdvn71f7",
+    "url_hash": "bed56ef9aca7",
+    "title": "前置存储周期为空",
+    "md_hash": "19a3094e",
+    "filename": "MFG_bed56ef9aca7_前置存储周期为空.md",
+    "doc_id": "mfg-1h9h4kdvn71f7",
+    "crawled_at": "2026-06-10 15:58:19"
+  },
+  "MFG_90b14a527add": {
+    "source_url": "https://docs.cvte.com/docs/mfg/mfg-1h9h581chsmfh",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/mfg-1h9h581chsmfh",
+    "url_hash": "90b14a527add",
+    "title": "非CKD物料超期不能接收",
+    "md_hash": "ef0b08d4",
+    "filename": "MFG_90b14a527add_非CKD物料超期不能接收.md",
+    "doc_id": "mfg-1h9h581chsmfh",
+    "crawled_at": "2026-06-10 15:58:20"
+  },
+  "MFG_0c736a3e38bd": {
+    "source_url": "https://docs.cvte.com/docs/mfg/mfg-1h9h7cu2o3njf",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/mfg-1h9h7cu2o3njf",
+    "url_hash": "0c736a3e38bd",
+    "title": "未配置首次安全周期",
+    "md_hash": "93555ef9",
+    "filename": "MFG_0c736a3e38bd_未配置首次安全周期.md",
+    "doc_id": "mfg-1h9h7cu2o3njf",
+    "crawled_at": "2026-06-10 15:58:21"
+  },
+  "MFG_6f69c29b74ba": {
+    "source_url": "https://docs.cvte.com/docs/mfg/mfg-1h9h8edort1pj",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/mfg-1h9h8edort1pj",
+    "url_hash": "6f69c29b74ba",
+    "title": "供应商编码为空",
+    "md_hash": "e3d1dc27",
+    "filename": "MFG_6f69c29b74ba_供应商编码为空.md",
+    "doc_id": "mfg-1h9h8edort1pj",
+    "crawled_at": "2026-06-10 15:58:21"
+  },
+  "MFG_6d1bde5a2a62": {
+    "source_url": "https://docs.cvte.com/docs/mfg/mfg-1h9h905tcoeoq",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/mfg-1h9h905tcoeoq",
+    "url_hash": "6d1bde5a2a62",
+    "title": "DC解析错误",
+    "md_hash": "945e7f27",
+    "filename": "MFG_6d1bde5a2a62_DC解析错误.md",
+    "doc_id": "mfg-1h9h905tcoeoq",
+    "crawled_at": "2026-06-10 15:58:22"
+  },
+  "MFG_433dbe697cfa": {
+    "source_url": "https://docs.cvte.com/docs/mfg/mfg-1h9hll6qd9ifv",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/mfg-1h9hll6qd9ifv",
+    "url_hash": "433dbe697cfa",
+    "title": "创建任务后不允许合单",
+    "md_hash": "09e70b74",
+    "filename": "MFG_433dbe697cfa_创建任务后不允许合单.md",
+    "doc_id": "mfg-1h9hll6qd9ifv",
+    "crawled_at": "2026-06-10 15:58:23"
+  },
+  "MFG_746a4f6de618": {
+    "source_url": "https://docs.cvte.com/docs/mfg/mfg-1h9hmbt2se77o",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/mfg-1h9hmbt2se77o",
+    "url_hash": "746a4f6de618",
+    "title": "PDA重复扫码",
+    "md_hash": "c004c080",
+    "filename": "MFG_746a4f6de618_PDA重复扫码.md",
+    "doc_id": "mfg-1h9hmbt2se77o",
+    "crawled_at": "2026-06-10 15:58:23"
+  },
+  "MFG_4d6511ea64bd": {
+    "source_url": "https://docs.cvte.com/docs/mfg/mfg-1h9j2g5qj0a43",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/mfg-1h9j2g5qj0a43",
+    "url_hash": "4d6511ea64bd",
+    "title": "拣料下架组织不匹配",
+    "md_hash": "eb8c7f05",
+    "filename": "MFG_4d6511ea64bd_拣料下架组织不匹配.md",
+    "doc_id": "mfg-1h9j2g5qj0a43",
+    "crawled_at": "2026-06-10 15:58:24"
+  },
+  "MFG_726fa01698a9": {
+    "source_url": "https://docs.cvte.com/docs/mfg/mfg-1h9j3balg6srl",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/mfg-1h9j3balg6srl",
+    "url_hash": "726fa01698a9",
+    "title": "扫描下架子库不匹配",
+    "md_hash": "18e775d1",
+    "filename": "MFG_726fa01698a9_扫描下架子库不匹配.md",
+    "doc_id": "mfg-1h9j3balg6srl",
+    "crawled_at": "2026-06-10 15:58:24"
+  },
+  "MFG_62f082c7d385": {
+    "source_url": "https://docs.cvte.com/docs/mfg/mfg-1h9j5b0en9kvs",
+    "normalized_url": "https://docs.cvte.com/docs/mfg/mfg-1h9j5b0en9kvs",
+    "url_hash": "62f082c7d385",
+    "title": "扫描条码不存在",
+    "md_hash": "b5194d30",
+    "filename": "MFG_62f082c7d385_扫描条码不存在.md",
+    "doc_id": "mfg-1h9j5b0en9kvs",
+    "crawled_at": "2026-06-10 15:58:25"
+  }
+}

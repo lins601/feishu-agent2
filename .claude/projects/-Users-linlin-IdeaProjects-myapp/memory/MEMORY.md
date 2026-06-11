@@ -1,0 +1,2 @@
+- [CVTE MFG MinDoc知识库](cvte-mfg-mindoc-knowledge-base.md) — CVTE制造系统(MES/WMS/QMS)完整文档目录结构，95个页面，MinDoc平台，含访问token
+- [MinDoc爬虫与WISE文件入库实现状态](mindoc-crawl-wise-ingestion-pdr81.md) — PDR V8.1规范爬虫+WISE入库组件完成状态
