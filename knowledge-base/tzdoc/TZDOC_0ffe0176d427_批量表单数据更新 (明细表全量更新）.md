@@ -1,0 +1,142 @@
+---
+source: MinDoc
+project_name: TZDOC
+source_url: https://docs.cvte.com/docs/tzdoc_v2/tzdoc_v2-1fvhuv2m6d239
+normalized_url: https://docs.cvte.com/docs/tzdoc_v2/tzdoc_v2-1fvhuv2m6d239
+url_hash: 0ffe0176d427
+document_key: TZDOC_0ffe0176d427
+doc_id: tzdoc_v2-1fvhuv2m6d239
+title: 批量表单数据更新 (明细表全量更新）
+md_hash: cf900ef8e108b316
+version: 1776685633
+image_count: 0
+crawled_at: 2026-06-11 16:11:14
+---
+
+# 批量表单数据更新 (明细表全量更新）
+
+## 1 总述
+
+
+```
+  表单数据更新
+  指定的明细表会先进行全量删除，再重新插入(未指定的其他明细表不会删除)
+```
+
+
+| 栏目 | 说明 | 备注 |
+| --- | --- | --- |
+| URL | /v1/app/openapi/form/{主表单分类编码(表名)}/batch | APP项目接口 |
+| 所属服务 | lcp-app |  |
+| 请求方式 | PUT |  |
+| 请求数据格式 | JSON |  |
+| 返回数据格式 | JSON |  |
+| Header | x-iac-token或x-auth-token,x-app-id,x-tenant-id |  |
+
+
+## 2 入参说明
+
+
+| 参数名 | 数据类型 | 是否必填 | 说明 | 备注 |
+| --- | --- | --- | --- | --- |
+| id | String | 是 | 表单主表数据id |  |
+| classId | String | 是 | 分类id |  |
+| objAttrItemList | List< FormAttrValueDTO > | 是 | 主表数据 |  |
+| tableList | List< TableInfo > | 是 | 明细表数据 |  |
+| userInfo | UserInfo | 否 | 操作用户信息 |  |
+
+
+UserInfo结构
+
+
+| 参数名 | 数据类型 | 是否必填 | 说明 | 备注 |
+| --- | --- | --- | --- | --- |
+| id | String | 否 | 用户id |  |
+| account | String | 否 | 用户域账号 |  |
+| name | String | 否 | 用户姓名 |  |
+
+
+TableInfo结构
+
+
+| 参数名 | 数据类型 | 是否必填 | 说明 | 备注 |
+| --- | --- | --- | --- | --- |
+| tableName | String | 是 | 明细表表名 |  |
+| rowList | List< LineValue > | 是 | 明细行信息 |  |
+
+
+FormAttrValueDTO结构
+
+
+| 参数名 | 数据类型 | 是否必填 | 说明 | 备注 |
+| --- | --- | --- | --- | --- |
+| attrId | String | 是 | 属性id | 和apiName二选一 |
+| apiName | String | 是 | 属性apiName | 和attrId二选一 |
+| attrValue | Object | 是 | 属性值 | 多值使用集合List,单值使用对应类型值 |
+
+
+LineValue
+
+
+| 参数名 | 数据类型 | 是否必填 | 说明 | 备注 |
+| --- | --- | --- | --- | --- |
+| dataList | List< ValueInfo > | 是 | 明细表字段列表 |  |
+
+
+ValueInfo
+
+
+| 参数名 | 数据类型 | 是否必填 | 说明 | 备注 |
+| --- | --- | --- | --- | --- |
+| apiName | String | 是 | 字段名(code) |  |
+| attrValue | Object | 是 | 字段值 |  |
+
+
+### 入参例子
+
+
+```
+[
+    {
+        "id": "807e6f00b41142f2aaf6e87af85ba218",//主表数据id
+        "classId": "47ae003849234a7ba9872bd629e61c76",//表单分类id
+        "objAttrItemList":[ //主表数据
+             {
+                "apiName":"SEX",
+                "attrValue":"1"
+             }
+         ],
+        "tableList": [{
+            "tableName": "PROD_DELISTING_FLOW_ITEM_BJ",//明细表表名
+            "rowList": [
+                {
+                    "dataList": [
+                        {
+                            "apiName": "BOTTLENECK_ITEM_NUMBER",
+                            "attrValue": "0002222"
+                        }
+                    ]
+                }
+            ]
+        }]
+    }
+]
+```
+
+
+### 3 出参说明
+
+
+#### 出参示例
+
+
+```
+{
+    "status": "0",
+    "message": "success",
+    "data": {
+        "pagination": null,
+        "content": 1
+    }
+}
+```

@@ -1,0 +1,179 @@
+---
+source: MinDoc
+project_name: OA
+source_url: https://docs.cvte.com/docs/oa/oa-1goi2i5433e1i
+normalized_url: https://docs.cvte.com/docs/oa/oa-1goi2i5433e1i
+url_hash: f3cfe141edd0
+document_key: OA_f3cfe141edd0
+doc_id: oa-1goi2i5433e1i
+title: 01_TV技术资料
+md_hash: 8eac7458a841c447
+version: null
+image_count: 0
+crawled_at: 2026-06-11 16:01:38
+---
+
+# 01_TV技术资料
+
+****目录**
+ ****搜索**
+
+ **
+ 展开
+
+
+
+
+ ****
+ ****
+
+
+
+
+
+
+
+- [开放接口](https://docs.cvte.com/docs/oa/oa-1ep5qbho2khtp)
+
+  - [集成流程](https://docs.cvte.com/docs/oa/oa-1fvrd4j43hug5)
+
+    - [1.1 获取用户可操作按钮](https://docs.cvte.com/docs/oa/oa-1fvrd63pqfe60)
+    - [1.2 终审通过 (特权人有权限)](https://docs.cvte.com/docs/oa/oa-1fvrdkopf9odn)
+    - [1.3 废弃 (特权人有权限)](https://docs.cvte.com/docs/oa/oa-1fvre8rejo4to)
+
+  - [待办服务](https://docs.cvte.com/docs/oa/oa-1ep5qdcfq7ola)
+
+    - [发送待办](https://docs.cvte.com/docs/oa/oa-1ep64r4a00rue)
+    - [设为已办](https://docs.cvte.com/docs/oa/oa-1ep650j12rhkr)
+
+  - [原生流程](https://docs.cvte.com/docs/oa/oa-1fb995fjrosff)
+
+    - [创建流程](https://docs.cvte.com/docs/oa/oa-1fb9960fr9cjh)
+    - [OA原生流程下推](https://docs.cvte.com/docs/oa/oa-1fb996bsvf2cm)
+    - [获取表单数据](https://docs.cvte.com/docs/oa/oa-1fb9avt6br87e)
+
+  - [审核线二开](https://docs.cvte.com/docs/oa/oa-1ffe96usmo3l6)
+
+- [域名与账号](https://docs.cvte.com/docs/oa/oa-1esmm8cfkjsqm)
+- [待处理流程](https://docs.cvte.com/docs/oa/oa-1gogfpf27ijbi)
+
+  - [查询工作项](https://docs.cvte.com/docs/oa/oa-1gogfq6fns22i)
+  - [查询审批记录](https://docs.cvte.com/docs/oa/oa-1gvcm7sqm3so6)
+
+- [流程模板定制](https://docs.cvte.com/docs/oa/oa-1goi0irmrjaal)
+
+  - [查询当前审批内容JSP](https://docs.cvte.com/docs/oa/oa-1goi0jaika23q)
+  - [查询审批节点固定人的流程和节点](https://docs.cvte.com/docs/oa/oa-1h1eqpkqiuk13)
+  - [查询机器节点定制代码](https://docs.cvte.com/docs/oa/oa-1h33k6qq24bbv)
+  - [查询原生流程定制代码jsp代码](https://docs.cvte.com/docs/oa/oa-1h33kcd7st8qj)
+
+- [具体流程运维点](https://docs.cvte.com/docs/oa/oa-1goi2hmall1ec)
+
+  - [01_TV技术资料](https://docs.cvte.com/docs/oa/oa-1goi2i5433e1i)
+  - [02_RFQ 立项申请](https://docs.cvte.com/docs/oa/oa-1gspjfon2n909)
+  - [03_库存异常流程-订单违约支付](https://docs.cvte.com/docs/oa/oa-1h7a4lg03pj8q)
+
+- [占位用](https://docs.cvte.com/docs/oa/oa-1goi4dqp6uvpk)
+- [测试环境发布](https://docs.cvte.com/docs/oa/oa-1gv06dldpup25)
+
+  - [V12](https://docs.cvte.com/docs/oa/oa-1h97e0cojp93j)
+  - [V15](https://docs.cvte.com/docs/oa/oa-1h97e0ir58hfc)
+
+- [加速运维](https://docs.cvte.com/docs/oa/oa-1gvb6r8pnm4eb)
+
+  - [查询流程模板固定审核人](https://docs.cvte.com/docs/oa/oa-1gvp0rqo9ct8h)
+  - [流程异步更新回调入参](https://docs.cvte.com/docs/oa/oa-1gvb6rqvq38vs)
+  - [如何终止代理](https://docs.cvte.com/docs/oa/oa-1gvcnign011pq)
+  - [占位](https://docs.cvte.com/docs/oa/oa-1gvcnr9a7cfrc)
+
+- [OA数据导出](https://docs.cvte.com/docs/oa/oa-1h0cfat15b471)
+
+  - [原生流程表单数据](https://docs.cvte.com/docs/oa/oa-1h0cfb53hvd64)
+  - [数据导出申请数据查询SQL](https://docs.cvte.com/docs/oa/oa-1h5rgba0r4bqi)
+  - [数据修改删除SQL](https://docs.cvte.com/docs/oa/oa-1h5rikk8jna7g)
+  - [流程owner导出](https://docs.cvte.com/docs/oa/oa-1hc4qoij9utlb)
+
+- [OA主数据](https://docs.cvte.com/docs/oa/oa-1h105vgfqchrg)
+
+  - [主数据中心同步](https://docs.cvte.com/docs/oa/oa-1h105vokcg4bc)
+  - [OA主数据迁移步骤](https://docs.cvte.com/docs/oa/oa-1h6h2ui6bthu2)
+
+- [Cursor辅助问题排查](https://docs.cvte.com/docs/oa/oa-1h10sr1ttrnes)
+
+  - [原生流程问题排查](https://docs.cvte.com/docs/oa/oa-1h10su1puhm77)
+
+- [表结构](https://docs.cvte.com/docs/oa/oa-1h6rp5o0615gm)
+
+  - [流程表](https://docs.cvte.com/docs/oa/oa-1h6rp5vdcqgqd)
+  - [流程说明](https://docs.cvte.com/docs/oa/oa-1h7ah43g3r115)
+
+- [调试技巧](https://docs.cvte.com/docs/oa/oa-1h7a6f6ng3i2b)
+- [常用问题](https://docs.cvte.com/docs/oa/oa-1hbc5pddloo63)
+
+
+
+
+
+
+
+
+
+
+
+ **
+
+
+
+
+
+
+ **
+ **暂无相关搜索结果！**
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 阅读次数：39
+ 本文档使用 [MinDoc](https://www.iminho.me) 发布
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 01_TV技术资料
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ ****

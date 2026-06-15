@@ -1,0 +1,26 @@
+{
+  "script": "crawl_mindoc_wise_v3.py",
+  "run_at": "2026-06-11",
+  "wise_kb_id": "2fe60de0-3c43-4edb-aeff-7990519e3459",
+  "wise_kb_name": "wise",
+  "wise_url": "https://wise.cvte.com/api/v1",
+  "projects": [
+    {"dir": "csb", "name": "CSB", "docs": 15, "images": 7, "elapsed_s": 75},
+    {"dir": "开发规范文档", "name": "开发规范文档", "docs": 33, "images": 41, "elapsed_s": 77},
+    {"dir": "统一待办", "name": "统一待办", "docs": 17, "images": 6, "elapsed_s": 76},
+    {"dir": "天舟云帮助文档_2023", "name": "天舟云帮助文档_2023", "docs": 220, "images": 631, "elapsed_s": 105},
+    {"dir": "门户帮助文档", "name": "【门户】帮助文档", "docs": 13, "images": 27, "elapsed_s": 76},
+    {"dir": "前端工程化", "name": "天舟云-前端工程化", "docs": 20, "images": 98, "elapsed_s": 78},
+    {"dir": "通用业务配置", "name": "通用业务配置-柯罗诺斯", "docs": 4, "images": 6, "elapsed_s": 75},
+    {"dir": "消息总线", "name": "消息总线", "docs": 16, "images": 12, "elapsed_s": 76},
+    {"dir": "状态机引擎", "name": "状态机引擎", "docs": 21, "images": 11, "elapsed_s": 75},
+    {"dir": "旧天舟云帮助文档", "name": "旧天舟云帮助文档", "docs": 47, "images": 182, "elapsed_s": 79}
+  ],
+  "summary": {
+    "total_docs": 406,
+    "total_images": 1021,
+    "total_elapsed_s": 792,
+    "v2_estimated_s": 14085,
+    "speedup_x": 17.8
+  }
+}
