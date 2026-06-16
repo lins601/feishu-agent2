@@ -1,0 +1,164 @@
+package com.example.myapp.controller;
+
+import com.example.myapp.config.FeishuConfig;
+import com.example.myapp.service.FeishuMessageService;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
+
+/**
+ * 飞书事件回调入口。
+ * <p>
+ * 支持 POST 和 GET 两种请求方式：
+ * - POST：飞书推送事件（消息接收等）
+ * - GET：飞书配置事件订阅时的 URL 验证（部分飞书版本用 GET）
+ * <p>
+ * challenge 验证同时支持 POST 和 GET 请求。
+ */
+@RestController
+@RequestMapping("/api/feishu")
+public class FeishuEventController {
+
+    private static final Logger log = LoggerFactory.getLogger(FeishuEventController.class);
+
+    private final FeishuConfig feishuConfig;
+    private final FeishuMessageService feishuMessageService;
+    private final ObjectMapper objectMapper;
+
+    public FeishuEventController(FeishuConfig feishuConfig,
+                                  FeishuMessageService feishuMessageService,
+                                  ObjectMapper objectMapper) {
+        this.feishuConfig = feishuConfig;
+        this.feishuMessageService = feishuMessageService;
+        this.objectMapper = objectMapper;
+    }
+
+    // ─── GET：飞书 URL 验证（部分版本用 GET 发 challenge）──────────
+
+    @GetMapping("/event")
+    public ResponseEntity<?> handleGetEvent(
+            @RequestParam(required = false) String challenge,
+            @RequestParam(required = false) String token,
+            @RequestParam(required = false) String type) {
+
+        log.info("收到 GET 请求: challenge={}, token={}, type={}", challenge, token, type);
+
+        // challenge 验证
+        if (challenge != null && !challenge.isEmpty()) {
+            if (token != null && !feishuConfig.getVerificationToken().equals(token)) {
+                log.warn("GET challenge token 校验失败: token={}", token);
+                return ResponseEntity.status(403).body(Map.of("error", "token mismatch"));
+            }
+            log.info("GET 验证成功, challenge={}", challenge);
+            return ResponseEntity.ok(Map.of("challenge", challenge));
+        }
+
+        // 非 challenge 的 GET 请求，返回 200
+        return ResponseEntity.ok(Map.of("status", "ok"));
+    }
+
+    // ─── POST：飞书事件推送 + challenge 验证 ──────────────────────
+
+    @PostMapping("/event")
+    public ResponseEntity<?> handlePostEvent(@RequestBody String body,
+                                              @RequestHeader(value = "X-Lark-Signature", required = false) String signature,
+                                              @RequestHeader(value = "X-Lark-Timestamp", required = false) String timestamp) {
+        log.info("收到 POST 事件回调, body length={}", body != null ? body.length() : 0);
+
+        try {
+            JsonNode root = objectMapper.readTree(body);
+
+            // ─── challenge 验证 ────────────────────────────────
+            if (root.has("challenge")) {
+                String challenge = root.path("challenge").asText();
+                String token = root.path("token").asText();
+
+                if (!feishuConfig.getVerificationToken().equals(token)) {
+                    log.warn("POST challenge token 校验失败: token={}", token);
+                    return ResponseEntity.status(403).body(Map.of("error", "token mismatch"));
+                }
+
+                log.info("POST 验证成功, challenge={}", challenge);
+                return ResponseEntity.ok(Map.of("challenge", challenge));
+            }
+
+            // ─── 解析事件 ──────────────────────────────────────
+            String eventType = root.path("header").path("event_type").asText("");
+            String eventId = root.path("header").path("event_id").asText("");
+
+            log.info("收到飞书事件: type={}, id={}", eventType, eventId);
+
+            switch (eventType) {
+                case "im.message.receive_v1" -> handleReceiveMessage(root);
+                case "im.chat.access_event.bot_p2p_chat_entered_v1" -> handleBotP2pChatEntered(root);
+                default -> log.info("忽略未处理的事件类型: {}", eventType);
+            }
+
+            return ResponseEntity.ok().build();
+
+        } catch (Exception e) {
+            log.error("处理飞书事件异常: body={}", body != null ? body.substring(0, Math.min(body.length(), 200)) : "null", e);
+            return ResponseEntity.ok().build();
+        }
+    }
+
+    // ─── 事件处理 ──────────────────────────────────────────────
+
+    private void handleReceiveMessage(JsonNode root) {
+        try {
+            JsonNode event = root.path("event");
+
+            String chatType = event.path("chat_type").asText("");
+            String messageId = event.path("message").path("message_id").asText("");
+            String msgType = event.path("message").path("msg_type").asText("");
+            String chatId = event.path("message").path("chat_id").asText("");
+
+            String openId = event.path("sender").path("sender_id").path("open_id").asText("");
+
+            String textContent = extractTextContent(event.path("message").path("content").asText(""));
+
+            log.info("收到消息: chatType={}, msgType={}, openId={}, text={}",
+                    chatType, msgType, openId, textContent);
+
+            if (textContent.isEmpty()) {
+                log.info("消息内容为空，跳过处理");
+                return;
+            }
+
+            feishuMessageService.handleUserMessage(openId, chatId, chatType, messageId, textContent);
+
+        } catch (Exception e) {
+            log.error("处理接收消息事件异常", e);
+        }
+    }
+
+    private void handleBotP2pChatEntered(JsonNode root) {
+        try {
+            JsonNode event = root.path("event");
+            String openId = event.path("sender").path("sender_id").path("open_id").asText("");
+            String chatId = event.path("chat_id").asText("");
+
+            log.info("用户进入会话: openId={}, chatId={}", openId, chatId);
+            feishuMessageService.sendWelcomeMessage(openId, chatId);
+
+        } catch (Exception e) {
+            log.error("处理进入会话事件异常", e);
+        }
+    }
+
+    private String extractTextContent(String contentJson) {
+        try {
+            if (contentJson == null || contentJson.isEmpty()) return "";
+            JsonNode contentNode = objectMapper.readTree(contentJson);
+            return contentNode.path("text").asText("").trim();
+        } catch (Exception e) {
+            log.warn("解析消息内容失败: {}", contentJson);
+            return "";
+        }
+    }
+}
