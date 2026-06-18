@@ -11,10 +11,15 @@ import com.lark.oapi.service.im.v1.model.ListMessageResp;
 import com.lark.oapi.service.im.v1.model.ListChat;
 import com.lark.oapi.service.im.v1.model.ListChatReq;
 import com.lark.oapi.service.im.v1.model.ListChatResp;
+import com.lark.oapi.service.im.v1.model.GetMessageResourceReq;
+import com.lark.oapi.service.im.v1.model.GetMessageResourceResp;
 import com.lark.oapi.service.im.v1.model.Message;
 import com.lark.oapi.service.im.v1.model.ReplyMessageReq;
 import com.lark.oapi.service.im.v1.model.ReplyMessageReqBody;
 import com.lark.oapi.service.im.v1.model.ReplyMessageResp;
+import com.lark.oapi.service.optical_char_recognition.v1.model.BasicRecognizeImageReq;
+import com.lark.oapi.service.optical_char_recognition.v1.model.BasicRecognizeImageReqBody;
+import com.lark.oapi.service.optical_char_recognition.v1.model.BasicRecognizeImageResp;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.slf4j.Logger;
@@ -27,11 +32,13 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -67,6 +74,7 @@ public class MessagePollingService {
     private final LarkBitableService bitableService;
     private final Map<String, Long> processedMessageIds = new ConcurrentHashMap<>();
     private final Map<String, List<QaContext>> recentQaByUser = new ConcurrentHashMap<>();
+    private final Map<String, QaContext> qaByQaId = new ConcurrentHashMap<>();
     private final Map<String, QaContext> qaByReplyMessageId = new ConcurrentHashMap<>();
     private final Map<String, QaContext> qaByUserMessageId = new ConcurrentHashMap<>();
     private final Set<String> autoRegisteredChatIds = ConcurrentHashMap.newKeySet();
@@ -88,7 +96,7 @@ public class MessagePollingService {
     private String autoRegisterPersistPath;
 
     @Value("${feishu.feedback.auto-register.load-existing-chats:true}")
-    private boolean loadExistingChatsOnStartup;
+    private boolean loadExistingChatsOnStartup = true;
 
     @Value("${feishu.feedback.reply-timeout-ms:120000}")
     private long replyTimeoutMs;
@@ -117,6 +125,12 @@ public class MessagePollingService {
     @Value("${feishu.feedback.card-actions-enabled:true}")
     private boolean cardActionsEnabled;
 
+    @Value("${feishu.feedback.card-action-mode:callback}")
+    private String cardActionMode;
+
+    @Value("${feishu.feedback.action-url-base:}")
+    private String actionUrlBase;
+
     @Value("${feishu.feedback.require-mention-in-group:true}")
     private boolean requireMentionInGroup;
 
@@ -125,6 +139,12 @@ public class MessagePollingService {
 
     @Value("${feishu.feedback.permission-fallback.delay-ms:12000}")
     private long permissionFallbackDelayMs;
+
+    @Value("${feishu.feedback.record-opaque-wise-as-miss:true}")
+    private boolean recordOpaqueWiseAsMiss;
+
+    @Value("${feishu.feedback.wise-ocr-enabled:false}")
+    private boolean wiseOcrEnabled;
 
     public MessagePollingService(Client feishuClient,
                                  @Qualifier("feedbackTaskExecutor") TaskExecutor feedbackTaskExecutor,
@@ -319,12 +339,21 @@ public class MessagePollingService {
         return configuredChatIds();
     }
 
+    public List<String> monitorChatIdsSnapshot() {
+        return configuredChatIds();
+    }
+
     private void loadAutoRegisteredChatsIfNecessary() {
         if (autoRegisteredChatsLoaded || !autoRegisterEnabled) {
             return;
         }
         synchronized (autoRegisteredChatIds) {
             if (autoRegisteredChatsLoaded) {
+                return;
+            }
+            if (!loadExistingChatsOnStartup) {
+                autoRegisteredChatsLoaded = true;
+                log.info("已按配置跳过加载历史自动登记反馈群聊: path={}", autoRegisterPersistPath);
                 return;
             }
             Path path = Path.of(autoRegisterPersistPath);
@@ -415,6 +444,7 @@ public class MessagePollingService {
         String replyMessageId = null;
         String lastUpdateTime = null;
         String answerSummary = "";
+        String answerRawContent = "";
         String knowledgeRefs = "";
         long stableSince = 0;
 
@@ -436,6 +466,7 @@ public class MessagePollingService {
                         || !currentUpdateTime.equals(lastUpdateTime)) {
                     replyMessageId = reply.getMessageId();
                     lastUpdateTime = currentUpdateTime;
+                    answerRawContent = reply.getBody() != null ? reply.getBody().getContent() : "";
                     answerSummary = extractAnswerSummary(reply);
                     knowledgeRefs = extractKnowledgeRefs(reply, answerSummary);
                     stableSince = System.currentTimeMillis();
@@ -459,7 +490,31 @@ public class MessagePollingService {
         } finally {
             if (replyMessageId != null) {
                 String qaId = LarkBitableService.generateId("qa");
-                boolean fallback = isFallbackAnswer(answerSummary);
+                String answerOcrText = "";
+                String answerDetectionText = answerSummary + " " + answerRawContent;
+                if (wiseOcrEnabled
+                        && !isWiseMissAnswerTemplate(answerDetectionText)
+                        && containsImageKey(answerRawContent)) {
+                    answerOcrText = extractOcrTextFromImages(replyMessageId, answerRawContent);
+                    if (!answerOcrText.isBlank()) {
+                        answerDetectionText = answerDetectionText + " " + answerOcrText;
+                        if (answerSummary == null || answerSummary.isBlank()) {
+                            answerSummary = truncate(answerOcrText.replaceAll("\\s+", " ").trim(), 300);
+                        }
+                    }
+                }
+                boolean wiseMissAnswer = isWiseMissAnswerTemplate(answerDetectionText);
+                if (!wiseMissAnswer
+                        && recordOpaqueWiseAsMiss
+                        && answerOcrText.isBlank()
+                        && isOpaqueWiseReply(answerRawContent)
+                        && (answerSummary == null || answerSummary.isBlank())) {
+                    wiseMissAnswer = true;
+                    answerSummary = "WISE 回复正文未通过飞书消息 API 暴露，已按未命中兜底记录。";
+                    log.info("WISE 回复为不可读卡片，按配置写入未命中表: questionId={}, question={}",
+                            userMessageId, question);
+                }
+                boolean fallback = isFallbackAnswer(answerSummary + " " + answerOcrText);
                 String recordAnswerSummary = answerSummaryForRecord(answerSummary);
                 long completedAt = Instant.now().toEpochMilli();
                 saveQuestionRecord(qaId, userMessageId, monitorChatId, userId, question,
@@ -467,9 +522,13 @@ public class MessagePollingService {
                 QaContext context = cacheQaContext(monitorChatId, userId, qaId, question, recordAnswerSummary,
                         knowledgeRefs, userMessageId, replyMessageId);
 
-                if (fallback) {
+                if (wiseMissAnswer) {
+                    log.info("检测到 WISE 知识库未命中固定话术，写入未命中表: questionId={}, question={}",
+                            userMessageId, question);
                     saveMissRecord(question, userId, monitorChatId, completedAt);
-                    sendMissNoticeIfNeeded(userMessageId, answerSummary);
+                } else if (fallback) {
+                    log.info("检测到兜底回答但未匹配 WISE 未命中固定话术，不写未命中表: questionId={}, answerSummary={}",
+                            userMessageId, truncate(answerSummary, 180));
                 }
 
                 String feedbackCardMessageId = sendFeedbackCard(userMessageId, qaId, question,
@@ -627,7 +686,7 @@ public class MessagePollingService {
                 .question(question)
                 .normalizedQuestion(normalized)
                 .count(1)
-                .status("待补充")
+                .status("pending")
                 .userId(userId)
                 .chatId(monitorChatId)
                 .owner("")
@@ -684,6 +743,7 @@ public class MessagePollingService {
         String key = qaContextKey(monitorChatId, userId);
         recentQaByUser.computeIfAbsent(key, ignored -> Collections.synchronizedList(new ArrayList<>()))
                 .add(context);
+        qaByQaId.put(qaId, context);
         if (replyMessageId != null && !replyMessageId.isBlank()) {
             qaByReplyMessageId.put(replyMessageId, context);
         }
@@ -739,6 +799,34 @@ public class MessagePollingService {
                 ? "感谢您的反馈！已记录为「有用」。"
                 : "感谢您的反馈！已记录为「没用」，我们会持续优化知识库。";
         replyText(feedbackMessageId, text);
+    }
+
+    public boolean recordFeedbackByQaId(String qaId, String feedback) {
+        if (qaId == null || qaId.isBlank() || feedback == null || feedback.isBlank()) {
+            return false;
+        }
+        String normalizedFeedback = feedback.trim().toLowerCase(Locale.ROOT);
+        if (!Set.of("useful", "useless").contains(normalizedFeedback)) {
+            return false;
+        }
+        QaContext context = qaByQaId.get(qaId.trim());
+        if (context == null || isExpired(context.timestamp())) {
+            log.info("URL 按钮反馈未找到可关联答案: qaId={}", qaId);
+            return false;
+        }
+        FeedbackRecord record = FeedbackRecord.builder()
+                .feedbackId(LarkBitableService.generateId("fb"))
+                .qaId(context.qaId())
+                .userId(context.userId())
+                .question(context.question())
+                .answerSummary(context.answerSummary())
+                .knowledgeRefs(context.knowledgeRefs())
+                .feedback(normalizedFeedback)
+                .createdAt(Instant.now().toEpochMilli())
+                .build();
+        bitableService.handleFeedback(record);
+        log.info("URL 按钮反馈已记录: qaId={}, feedback={}", qaId, normalizedFeedback);
+        return true;
     }
 
     FeedbackMatch matchFeedbackContext(String monitorChatId, String userId,
@@ -892,8 +980,22 @@ public class MessagePollingService {
         button.put("tag", "button");
         button.put("text", text);
         button.put("type", type);
-        button.put("value", value);
+        if ("url".equalsIgnoreCase(cardActionMode) && actionUrlBase != null && !actionUrlBase.isBlank()) {
+            button.put("url", feedbackActionUrl(qaId, feedback));
+        } else {
+            button.put("value", value);
+        }
         return button;
+    }
+
+    private String feedbackActionUrl(String qaId, String feedback) {
+        String base = actionUrlBase.strip();
+        while (base.endsWith("/")) {
+            base = base.substring(0, base.length() - 1);
+        }
+        return base + "/api/feedback/record?qaId="
+                + URLEncoder.encode(qaId, StandardCharsets.UTF_8)
+                + "&feedback=" + URLEncoder.encode(feedback, StandardCharsets.UTF_8);
     }
 
     private boolean isNewUserMessage(Message message) {
@@ -1028,6 +1130,117 @@ public class MessagePollingService {
             if (refs.size() >= 10) {
                 return;
             }
+        }
+    }
+
+    public String debugOcrImageKey(String messageId, String imageKey) {
+        return ocrImageKey(messageId, imageKey);
+    }
+
+    private boolean containsImageKey(String contentJson) {
+        return contentJson != null && (contentJson.contains("\"image_key\"")
+                || contentJson.contains("\"img_key\""));
+    }
+
+    private boolean isOpaqueWiseReply(String contentJson) {
+        if (contentJson == null || contentJson.isBlank()) {
+            return false;
+        }
+        return contentJson.contains("\"title\":\"WISE\"")
+                && (containsImageKey(contentJson)
+                || contentJson.contains("请升级至最新版本客户端"));
+    }
+
+    private String extractOcrTextFromImages(String messageId, String contentJson) {
+        List<String> imageKeys = extractImageKeys(contentJson);
+        if (imageKeys.isEmpty()) {
+            return "";
+        }
+
+        List<String> texts = new ArrayList<>();
+        for (String imageKey : imageKeys.subList(0, Math.min(imageKeys.size(), 3))) {
+            String text = ocrImageKey(messageId, imageKey);
+            if (!text.isBlank()) {
+                texts.add(text);
+            }
+        }
+        return String.join("\n", texts);
+    }
+
+    private String ocrImageKey(String messageId, String imageKey) {
+        if (imageKey == null || imageKey.isBlank() || feishuClient == null) {
+            return "";
+        }
+        try {
+            GetMessageResourceResp imageResp = feishuClient.im().messageResource().get(GetMessageResourceReq.newBuilder()
+                    .messageId(messageId)
+                    .fileKey(imageKey)
+                    .type("image")
+                    .build());
+            if (imageResp == null || imageResp.getData() == null) {
+                log.warn("下载 WISE 消息图片失败: messageId={}, imageKey={}, code={}, msg={}",
+                        messageId, imageKey, imageResp != null ? imageResp.getCode() : null,
+                        imageResp != null ? imageResp.getMsg() : "null response");
+                return "";
+            }
+
+            String base64 = Base64.getEncoder().encodeToString(imageResp.getData().toByteArray());
+            BasicRecognizeImageResp ocrResp = feishuClient.opticalCharRecognition().v1().image()
+                    .basicRecognize(BasicRecognizeImageReq.newBuilder()
+                            .basicRecognizeImageReqBody(BasicRecognizeImageReqBody.newBuilder()
+                                    .image(base64)
+                                    .build())
+                            .build());
+            if (ocrResp == null || !ocrResp.success() || ocrResp.getData() == null
+                    || ocrResp.getData().getTextList() == null) {
+                log.warn("WISE 图片 OCR 失败: imageKey={}, code={}, msg={}",
+                        imageKey, ocrResp != null ? ocrResp.getCode() : null,
+                        ocrResp != null ? ocrResp.getMsg() : "null response");
+                return "";
+            }
+
+            String text = String.join("\n", ocrResp.getData().getTextList()).trim();
+            log.info("WISE 图片 OCR 完成: imageKey={}, textLength={}", imageKey, text.length());
+            return text;
+        } catch (Exception e) {
+            log.warn("WISE 图片 OCR 异常: imageKey={}", imageKey, e);
+            return "";
+        }
+    }
+
+    private List<String> extractImageKeys(String contentJson) {
+        if (contentJson == null || contentJson.isBlank()) {
+            return List.of();
+        }
+        try {
+            JsonNode node = objectMapper.readTree(contentJson);
+            LinkedHashSet<String> imageKeys = new LinkedHashSet<>();
+            collectImageKeys(node, "", imageKeys);
+            return new ArrayList<>(imageKeys);
+        } catch (Exception e) {
+            log.debug("解析 WISE 图片 key 失败: content={}", contentJson, e);
+            return List.of();
+        }
+    }
+
+    private void collectImageKeys(JsonNode node, String fieldName, Set<String> imageKeys) {
+        if (node == null || node.isNull()) {
+            return;
+        }
+        if (node.isTextual()) {
+            String value = node.asText("");
+            if (("image_key".equals(fieldName) || "img_key".equals(fieldName))
+                    && value.startsWith("img_")) {
+                imageKeys.add(value);
+            }
+            return;
+        }
+        if (node.isArray()) {
+            node.forEach(child -> collectImageKeys(child, fieldName, imageKeys));
+            return;
+        }
+        if (node.isObject()) {
+            node.fields().forEachRemaining(entry -> collectImageKeys(entry.getValue(), entry.getKey(), imageKeys));
         }
     }
 
@@ -1185,7 +1398,7 @@ public class MessagePollingService {
         return true;
     }
 
-    private boolean isFallbackAnswer(String answerSummary) {
+    boolean isFallbackAnswer(String answerSummary) {
         if (answerSummary == null || answerSummary.isBlank()) {
             return false;
         }
@@ -1203,6 +1416,18 @@ public class MessagePollingService {
                 || text.contains("没有明确答案")
                 || text.contains("为避免误导")
                 || text.contains("不直接给出处理步骤");
+    }
+
+    boolean isWiseMissAnswerTemplate(String answerSummary) {
+        if (answerSummary == null || answerSummary.isBlank()) {
+            return false;
+        }
+        String normalized = answerSummary.replaceAll("\\s+", "");
+        return normalized.contains("当前知识库中暂未收录该问题")
+                && normalized.contains("为避免误导产线操作")
+                && normalized.contains("本次不直接给出处理步骤")
+                && normalized.contains("已记录您的问题")
+                && normalized.contains("提交管理员补充");
     }
 
     private String answerSummaryForRecord(String answerSummary) {

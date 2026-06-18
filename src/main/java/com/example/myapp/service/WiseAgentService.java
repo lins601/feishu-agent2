@@ -46,6 +46,14 @@ public class WiseAgentService {
         this.objectMapper = objectMapper;
     }
 
+    public boolean isConfigured() {
+        return wiseConfig != null
+                && wiseConfig.getApiKey() != null
+                && !wiseConfig.getApiKey().isBlank()
+                && wiseConfig.getAgentId() != null
+                && !wiseConfig.getAgentId().isBlank();
+    }
+
     /**
      * 向 WISE 智能体发送问题，同步等待完整回答。
      *

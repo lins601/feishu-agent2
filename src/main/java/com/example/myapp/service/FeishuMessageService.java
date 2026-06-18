@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
  * 全链路：用户消息 → Agent 处理 → 飞书卡片回复（含反馈按钮） → 异步写入多维表格
  * <p>
  * 反馈机制支持两种方式：
- * 1. 卡片按钮点击（通过 WebSocket card.action.trigger 回调）
+ * 1. 卡片按钮点击（通过 WebSocket 或 HTTP card.action.trigger 回调）
  * 2. 文本反馈（"有用"/"没用"/"👍"/"👎"，通过消息接收识别）
  * <p>
  * 反馈关联优先级（PDR 10.6）：
@@ -172,7 +172,7 @@ public class FeishuMessageService {
                         .question(textContent)
                         .normalizedQuestion(textContent)
                         .count(1)
-                        .status("待补充")
+                        .status("pending")
                         .userId(openId)
                         .chatId(chatId)
                         .owner("")
@@ -341,14 +341,21 @@ public class FeishuMessageService {
         P2CardActionTriggerData data = event.getEvent();
         CallBackOperator operator = data.getOperator();
         CallBackAction action = data.getAction();
-        Map<String, Object> actionValue = action.getValue();
+        return handleFeedbackAction(operator != null ? operator.getOpenId() : "",
+                action != null ? action.getValue() : Map.of());
+    }
 
-        String openId = operator.getOpenId();
-        String qaId = (String) actionValue.get("qa_id");
-        String feedbackType = (String) actionValue.get("feedback");
-        String question = (String) actionValue.getOrDefault("question", "");
-        String answerSummary = (String) actionValue.getOrDefault("answer_summary", "");
-        String knowledgeRefs = (String) actionValue.getOrDefault("knowledge_refs", "");
+    public P2CardActionTriggerResponse handleFeedbackAction(String openId, Map<String, Object> actionValue) {
+        String qaId = stringValue(actionValue.get("qa_id"));
+        String feedbackType = stringValue(actionValue.get("feedback"));
+        String question = stringValue(actionValue.getOrDefault("question", ""));
+        String answerSummary = stringValue(actionValue.getOrDefault("answer_summary", ""));
+        String knowledgeRefs = stringValue(actionValue.getOrDefault("knowledge_refs", ""));
+
+        if (qaId.isBlank() || feedbackType.isBlank()) {
+            log.warn("卡片按钮反馈缺少必要字段: user={}, value={}", openId, actionValue);
+            return feedbackToast("warning", "反馈信息不完整，请直接回复「有用」或「没用」。");
+        }
 
         log.info("卡片按钮反馈: qa_id={}, user={}, feedback={}", qaId, openId, feedbackType);
 
@@ -365,16 +372,21 @@ public class FeishuMessageService {
                 .build();
 
         bitableService.handleFeedback(record);
+        return feedbackToast("success",
+                "useful".equals(feedbackType) ? "感谢您的反馈！👍" : "感谢您的反馈，我们会持续优化知识库 📝");
+    }
 
-        // 构建回调响应：只返回 toast（先验证 toast 正常，后续再加卡片更新）
+    private P2CardActionTriggerResponse feedbackToast(String type, String content) {
         P2CardActionTriggerResponse response = new P2CardActionTriggerResponse();
-
         CallBackToast toast = new CallBackToast();
-        toast.setType("success");
-        toast.setContent("useful".equals(feedbackType) ? "感谢您的反馈！👍" : "感谢您的反馈，我们会持续优化知识库 📝");
+        toast.setType(type);
+        toast.setContent(content);
         response.setToast(toast);
-
         return response;
+    }
+
+    private String stringValue(Object value) {
+        return value == null ? "" : String.valueOf(value);
     }
 
     // ═══════════════════════════════════════════════════

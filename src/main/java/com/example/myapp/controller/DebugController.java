@@ -2,9 +2,12 @@ package com.example.myapp.controller;
 
 import com.example.myapp.service.FeishuMessageService;
 import com.example.myapp.service.LarkBitableService;
+import com.example.myapp.service.MessagePollingService;
 import com.example.myapp.service.MindocSyncScheduler;
+import com.example.myapp.model.MissRecord;
 import com.example.myapp.model.QuestionRecord;
 import com.example.myapp.dto.AgentResponse;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.lark.oapi.Client;
 import com.lark.oapi.service.im.v1.enums.CreateMessageReceiveIdTypeEnum;
 import com.lark.oapi.service.im.v1.model.*;
@@ -31,16 +34,19 @@ public class DebugController {
     private final Client feishuClient;
     private final LarkBitableService bitableService;
     private final FeishuMessageService messageService;
+    private final MessagePollingService messagePollingService;
     private final MindocSyncScheduler mindocSyncScheduler;
     private final Environment env;
 
     public DebugController(Client feishuClient, LarkBitableService bitableService,
                            FeishuMessageService messageService,
+                           MessagePollingService messagePollingService,
                            MindocSyncScheduler mindocSyncScheduler,
                            Environment env) {
         this.feishuClient = feishuClient;
         this.bitableService = bitableService;
         this.messageService = messageService;
+        this.messagePollingService = messagePollingService;
         this.mindocSyncScheduler = mindocSyncScheduler;
         this.env = env;
     }
@@ -172,10 +178,8 @@ public class DebugController {
                     .createdAt(Instant.now().toEpochMilli())
                     .build();
 
-            // 直接调用（非异步，等待结果）
-            // 通过反射直接调用 createRecord 来测试
-            String appToken = getFieldValue("appToken");
-            String qaTableId = getFieldValue("qaTableId");
+            String appToken = env.getProperty("feishu.bitable.app-token");
+            String qaTableId = env.getProperty("feishu.bitable.qa-table-id");
 
             result.put("appToken", appToken);
             result.put("qaTableId", qaTableId);
@@ -281,8 +285,8 @@ public class DebugController {
         Map<String, Object> result = new LinkedHashMap<>();
 
         try {
-            String appToken = getFieldValue("appToken");
-            String qaTableId = getFieldValue("qaTableId");
+            String appToken = env.getProperty("feishu.bitable.app-token");
+            String qaTableId = env.getProperty("feishu.bitable.qa-table-id");
 
             result.put("appToken", appToken);
             result.put("qaTableId", qaTableId);
@@ -364,6 +368,157 @@ public class DebugController {
         return result;
     }
 
+    @PostMapping("/test-save-miss")
+    public Map<String, Object> testSaveMiss() {
+        Map<String, Object> result = new LinkedHashMap<>();
+        try {
+            long now = Instant.now().toEpochMilli();
+            String question = "调试未命中问题_" + now;
+            MissRecord record = MissRecord.builder()
+                    .question(question)
+                    .normalizedQuestion(question)
+                    .count(1)
+                    .status("pending")
+                    .userId("ou_debug")
+                    .chatId("oc_debug")
+                    .owner("")
+                    .createdAt(now)
+                    .updatedAt(now)
+                    .build();
+
+            Map<String, Object> writeResult = bitableService.debugCreateMissRecord(record);
+            result.put("status", Boolean.TRUE.equals(writeResult.get("success")) ? "success" : "failed");
+            result.put("question", question);
+            result.put("missTableId", env.getProperty("feishu.bitable.miss-table-id"));
+            result.put("missAppToken", env.getProperty("feishu.bitable.miss-app-token"));
+            result.put("operationAppToken", env.getProperty("feishu.bitable.operation-app-token"));
+            result.put("writeResult", writeResult);
+        } catch (Exception e) {
+            result.put("status", "error");
+            result.put("error", e.getClass().getSimpleName() + ": " + e.getMessage());
+        }
+        return result;
+    }
+
+    @PostMapping("/test-save-miss-service")
+    public Map<String, Object> testSaveMissService() {
+        Map<String, Object> result = new LinkedHashMap<>();
+        try {
+            long now = Instant.now().toEpochMilli();
+            String question = "调试真实路径未命中问题_" + now;
+            MissRecord record = MissRecord.builder()
+                    .question(question)
+                    .normalizedQuestion(question)
+                    .count(1)
+                    .status("pending")
+                    .userId("ou_debug")
+                    .chatId("oc_debug")
+                    .owner("")
+                    .createdAt(now)
+                    .updatedAt(now)
+                    .build();
+
+            bitableService.saveMissRecord(record);
+            result.put("status", "submitted");
+            result.put("question", question);
+            result.put("missTableId", env.getProperty("feishu.bitable.miss-table-id"));
+            result.put("missAppToken", mask(env.getProperty("feishu.bitable.miss-app-token")));
+        } catch (Exception e) {
+            result.put("status", "error");
+            result.put("error", e.getClass().getSimpleName() + ": " + e.getMessage());
+        }
+        return result;
+    }
+
+    @PostMapping("/test-ocr-image")
+    public Map<String, Object> testOcrImage(@RequestParam String imageKey,
+                                            @RequestParam(defaultValue = "") String messageId) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        try {
+            String text = messagePollingService.debugOcrImageKey(messageId, imageKey);
+            result.put("status", text.isBlank() ? "empty" : "success");
+            result.put("messageId", messageId);
+            result.put("imageKey", imageKey);
+            result.put("text", text);
+        } catch (Exception e) {
+            result.put("status", "error");
+            result.put("error", e.getClass().getSimpleName() + ": " + e.getMessage());
+        }
+        return result;
+    }
+
+    @GetMapping("/feedback-monitor-chats")
+    public Map<String, Object> feedbackMonitorChats() {
+        Map<String, Object> result = new LinkedHashMap<>();
+        List<String> chatIds = messagePollingService.monitorChatIdsSnapshot();
+        result.put("count", chatIds.size());
+        result.put("chatIds", chatIds);
+        result.put("cardActionsEnabled", env.getProperty("feishu.feedback.card-actions-enabled"));
+        result.put("websocketEnabled", env.getProperty("feishu.websocket.enabled"));
+        return result;
+    }
+
+    @PostMapping("/register-feedback-chat")
+    public Map<String, Object> registerFeedbackChat(@RequestParam String chatId,
+                                                    @RequestParam(defaultValue = "debug") String reason) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        messagePollingService.registerChatForFeedback(chatId, reason);
+        result.put("status", "registered");
+        result.put("chatId", chatId);
+        result.put("chatIds", messagePollingService.monitorChatIdsSnapshot());
+        return result;
+    }
+
+    @GetMapping("/list-chat-messages")
+    public Map<String, Object> listChatMessages(@RequestParam String chatId,
+                                                @RequestParam(defaultValue = "600") long seconds,
+                                                @RequestParam(defaultValue = "20") int pageSize,
+                                                @RequestParam(defaultValue = "false") boolean includeRaw) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        try {
+            long startSeconds = Math.max(0, Instant.now().getEpochSecond() - Math.max(1, seconds));
+            int safePageSize = Math.max(1, Math.min(50, pageSize));
+            ListMessageReq req = ListMessageReq.newBuilder()
+                    .containerIdType("chat")
+                    .containerId(chatId)
+                    .startTime(String.valueOf(startSeconds))
+                    .sortType("ByCreateTimeDesc")
+                    .pageSize(safePageSize)
+                    .build();
+
+            ListMessageResp resp = feishuClient.im().message().list(req);
+            result.put("apiCode", resp != null ? resp.getCode() : null);
+            result.put("apiMsg", resp != null ? resp.getMsg() : "null");
+            result.put("chatId", chatId);
+
+            List<Map<String, Object>> messages = new ArrayList<>();
+            if (resp != null && resp.getData() != null && resp.getData().getItems() != null) {
+                for (Message message : resp.getData().getItems()) {
+                    Map<String, Object> item = new LinkedHashMap<>();
+                    item.put("messageId", message.getMessageId());
+                    item.put("msgType", message.getMsgType());
+                    item.put("senderType", message.getSender() != null ? message.getSender().getSenderType() : "");
+                    item.put("createTime", message.getCreateTime());
+                    item.put("updateTime", message.getUpdateTime());
+                    item.put("parentId", message.getParentId());
+                    item.put("rootId", message.getRootId());
+                    String content = message.getBody() != null ? message.getBody().getContent() : "";
+                    item.put("text", extractMessageText(content));
+                    item.put("allText", extractAllText(content));
+                    if (includeRaw) {
+                        item.put("content", content);
+                    }
+                    messages.add(item);
+                }
+            }
+            result.put("messages", messages);
+        } catch (Exception e) {
+            result.put("status", "error");
+            result.put("error", e.getClass().getSimpleName() + ": " + e.getMessage());
+        }
+        return result;
+    }
+
     // --- 工具方法 ---
 
     /**
@@ -379,12 +534,16 @@ public class DebugController {
         envValues.put("feishu.bitable.qa-table-id", env.getProperty("feishu.bitable.qa-table-id"));
         envValues.put("feishu.bitable.feedback-table-id", env.getProperty("feishu.bitable.feedback-table-id"));
         envValues.put("feishu.bitable.miss-table-id", env.getProperty("feishu.bitable.miss-table-id"));
-        envValues.put("feishu.app-id", env.getProperty("feishu.app-id"));
+        envValues.put("feishu.bitable.operation-app-token", mask(env.getProperty("feishu.bitable.operation-app-token")));
+        envValues.put("feishu.bitable.miss-app-token", mask(env.getProperty("feishu.bitable.miss-app-token")));
+        envValues.put("feishu.app-id", mask(env.getProperty("feishu.app-id")));
+        envValues.put("feishu.app-secret", configuredLabel(env.getProperty("feishu.app-secret")));
         result.put("from_environment", envValues);
 
         // 2. 通过反射从 LarkBitableService 读取 @Value 字段
         Map<String, String> fieldValues = new LinkedHashMap<>();
-        String[] fieldNames = {"appToken", "qaTableId", "feedbackTableId", "missTableId", "reviewTableId", "syncTableId"};
+        String[] fieldNames = {"appToken", "operationAppToken", "missAppToken",
+                "qaTableId", "feedbackTableId", "missTableId", "reviewTableId", "syncTableId"};
         for (String fieldName : fieldNames) {
             try {
                 // 尝试从原始类获取（不是代理类）
@@ -421,6 +580,69 @@ public class DebugController {
         }
 
         return result;
+    }
+
+    private String configuredLabel(String value) {
+        return value == null || value.isBlank() ? "未配置" : "已配置";
+    }
+
+    private String mask(String value) {
+        if (value == null || value.isBlank()) {
+            return "未配置";
+        }
+        if (value.length() <= 8) {
+            return value.charAt(0) + "***" + value.charAt(value.length() - 1);
+        }
+        return value.substring(0, 4) + "***" + value.substring(value.length() - 4);
+    }
+
+    private String extractMessageText(String contentJson) {
+        try {
+            if (contentJson == null || contentJson.isBlank()) {
+                return "";
+            }
+            com.fasterxml.jackson.databind.JsonNode node =
+                    new com.fasterxml.jackson.databind.ObjectMapper().readTree(contentJson);
+            return node.path("text").asText("");
+        } catch (Exception e) {
+            return contentJson;
+        }
+    }
+
+    private String extractAllText(String contentJson) {
+        try {
+            if (contentJson == null || contentJson.isBlank()) {
+                return "";
+            }
+            JsonNode node = new com.fasterxml.jackson.databind.ObjectMapper().readTree(contentJson);
+            List<String> texts = new ArrayList<>();
+            collectTextNodes(node, texts);
+            return String.join("\n", texts);
+        } catch (Exception e) {
+            return contentJson;
+        }
+    }
+
+    private void collectTextNodes(JsonNode node, List<String> texts) {
+        if (node == null || node.isNull()) {
+            return;
+        }
+        if (node.isTextual()) {
+            String text = node.asText("");
+            if (!text.isBlank()) {
+                texts.add(text);
+            }
+            return;
+        }
+        if (node.isArray()) {
+            for (JsonNode item : node) {
+                collectTextNodes(item, texts);
+            }
+            return;
+        }
+        if (node.isObject()) {
+            node.fields().forEachRemaining(entry -> collectTextNodes(entry.getValue(), texts));
+        }
     }
 
     private Map<String, Object> testDirectWrite(String appToken, String qaTableId) {

@@ -63,6 +63,9 @@ public class FeishuConfig {
      */
     @Bean
     public Client feishuClient() {
+        if (appId == null || appId.isBlank() || appSecret == null || appSecret.isBlank()) {
+            log.error("飞书 API 凭证未配置：feishu.app-id 或 feishu.app-secret 为空，消息轮询和多维表格写入都会失败");
+        }
         return Client.newBuilder(appId, appSecret)
                 .openBaseUrl(BaseUrlEnum.FeiShu)
                 .logReqAtDebug(false)

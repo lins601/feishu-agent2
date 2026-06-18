@@ -5,6 +5,7 @@ import com.example.myapp.service.FeishuMessageService;
 import com.example.myapp.service.MessagePollingService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.lark.oapi.event.cardcallback.model.P2CardActionTriggerResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -98,11 +99,20 @@ public class FeishuEventController {
                 return ResponseEntity.ok(Map.of("challenge", challenge));
             }
 
+            String directType = root.path("type").asText("");
+            if ("card.action.trigger".equals(directType)) {
+                return ResponseEntity.ok(handleCardAction(root));
+            }
+
             // ─── 解析事件 ──────────────────────────────────────
             String eventType = root.path("header").path("event_type").asText("");
             String eventId = root.path("header").path("event_id").asText("");
 
             log.info("收到飞书事件: type={}, id={}", eventType, eventId);
+
+            if ("card.action.trigger".equals(eventType) || "card.action.trigger_v1".equals(eventType)) {
+                return ResponseEntity.ok(handleCardAction(root));
+            }
 
             switch (eventType) {
                 case "im.message.receive_v1" -> handleReceiveMessage(root);
@@ -118,6 +128,19 @@ public class FeishuEventController {
             log.error("处理飞书事件异常: body={}", body != null ? body.substring(0, Math.min(body.length(), 200)) : "null", e);
             return ResponseEntity.ok().build();
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private P2CardActionTriggerResponse handleCardAction(JsonNode root) {
+        JsonNode event = root.has("event") ? root.path("event") : root;
+        String openId = event.path("operator").path("open_id").asText("");
+        if (openId.isBlank()) {
+            openId = event.path("operator").path("user_id").asText("");
+        }
+        Map<String, Object> value = objectMapper.convertValue(
+                event.path("action").path("value"), Map.class);
+        log.info("HTTP 卡片按钮回调: openId={}, value={}", openId, value);
+        return feishuMessageService.handleFeedbackAction(openId, value != null ? value : Map.of());
     }
 
     // ─── 事件处理 ──────────────────────────────────────────────

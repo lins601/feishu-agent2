@@ -70,6 +70,10 @@ public class LarkBitableService {
     private static final DateTimeFormatter TIMESTAMP_FMT =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneId.of("Asia/Shanghai"));
 
+    private static final String WISE_MISS_SYSTEM_PROMPT = "当前知识库中暂未收录该问题。\n\n"
+            + "为避免误导产线操作，本次不直接给出处理步骤。\n"
+            + "已记录您的问题，并提交管理员补充。";
+
     private final Client feishuClient;
     private final FeishuAdminNotifier adminNotifier;
     private final Map<String, Integer> negativeFeedbackCountCache = new ConcurrentHashMap<>();
@@ -79,6 +83,9 @@ public class LarkBitableService {
 
     @Value("${feishu.bitable.operation-app-token:${feishu.bitable.app-token:}}")
     private String operationAppToken;
+
+    @Value("${feishu.bitable.miss-app-token:${feishu.bitable.operation-app-token:${feishu.bitable.app-token:}}}")
+    private String missAppToken;
 
     @Value("${feishu.bitable.qa-table-id:}")
     private String qaTableId;
@@ -236,12 +243,14 @@ public class LarkBitableService {
      */
     @Async
     public void saveMissRecord(MissRecord record) {
-        if (!isConfigured(operationAppToken, missTableId)) {
+        if (!isConfigured(missAppToken, missTableId)) {
             log.warn("miss_question 表未配置，跳过写入");
             return;
         }
 
         try {
+            log.info("准备写入未命中表: appToken={}, tableId={}, question={}",
+                    maskToken(missAppToken), missTableId, record.getQuestion());
             AppTableRecord existing = findMissRecord(record.getNormalizedQuestion());
             if (existing != null) {
                 Map<String, Object> updateFields = new LinkedHashMap<>();
@@ -250,29 +259,81 @@ public class LarkBitableService {
                 updateFields.put("出现次数", String.valueOf(nextCount));
                 updateFields.put("最近出现时间", formatTimestamp(record.getUpdatedAt()));
 
-                updateRecord(operationAppToken, missTableId, existing.getRecordId(), updateFields, "miss_question");
+                updateRecord(missAppToken, missTableId, existing.getRecordId(), updateFields, "miss_question");
                 log.info("更新未命中问题累计次数: normalized_question={}, count={}",
                         record.getNormalizedQuestion(), nextCount);
                 notifyTopMissQuestion(record.getQuestion(), nextCount);
                 return;
             }
 
-            Map<String, Object> fields = new LinkedHashMap<>();
-            fields.put("问题", record.getQuestion());
-            fields.put("标准化问题", record.getNormalizedQuestion());
-            fields.put("出现次数", String.valueOf(Math.max(1, record.getCount())));
-            fields.put("状态", record.getStatus());
-            fields.put("首次提问用户", record.getUserId());
-            fields.put("群聊", record.getChatId());
-            fields.put("负责人", record.getOwner());
-            fields.put("首次出现时间", formatTimestamp(record.getCreatedAt()));
-            fields.put("最近出现时间", formatTimestamp(record.getUpdatedAt()));
-
-            createRecord(operationAppToken, missTableId, fields, "miss_question");
+            Map<String, Object> fields = missRecordFields(record);
+            createRecord(missAppToken, missTableId, fields, "miss_question");
             notifyTopMissQuestion(record.getQuestion(), Math.max(1, record.getCount()));
         } catch (Exception e) {
             log.error("处理未命中问题失败: normalized_question={}", record.getNormalizedQuestion(), e);
         }
+    }
+
+    public Map<String, Object> debugCreateMissRecord(MissRecord record) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("targetAppToken", maskToken(missAppToken));
+        result.put("targetTableId", missTableId);
+        if (!isConfigured(missAppToken, missTableId)) {
+            result.put("success", false);
+            result.put("error", "miss_question 表未配置");
+            return result;
+        }
+
+        Map<String, Object> fields = missRecordFields(record);
+        result.put("fields", fields);
+        try {
+            AppTableRecord appTableRecord = AppTableRecord.newBuilder()
+                    .fields(fields)
+                    .build();
+            CreateAppTableRecordReq req = CreateAppTableRecordReq.newBuilder()
+                    .appToken(missAppToken)
+                    .tableId(missTableId)
+                    .appTableRecord(appTableRecord)
+                    .build();
+            CreateAppTableRecordResp resp = feishuClient.bitable().appTableRecord().create(req);
+            int code = resp != null ? resp.getCode() : -1;
+            result.put("success", resp != null && code == 0);
+            result.put("code", code);
+            result.put("msg", resp != null ? resp.getMsg() : "null response");
+            if (resp != null && resp.getData() != null && resp.getData().getRecord() != null) {
+                result.put("recordId", resp.getData().getRecord().getRecordId());
+            }
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("exception", e.getClass().getSimpleName() + ": " + e.getMessage());
+            log.error("调试写入未命中表异常: fields={}", fields, e);
+        }
+        return result;
+    }
+
+    private Map<String, Object> missRecordFields(MissRecord record) {
+        Map<String, Object> fields = new LinkedHashMap<>();
+        fields.put("问题", record.getQuestion());
+        fields.put("标准化问题", record.getNormalizedQuestion());
+        fields.put("出现次数", String.valueOf(Math.max(1, record.getCount())));
+        fields.put("状态", record.getStatus());
+        fields.put("首次提问用户", record.getUserId());
+        fields.put("群聊", record.getChatId());
+        fields.put("系统提示", WISE_MISS_SYSTEM_PROMPT);
+        fields.put("负责人", record.getOwner());
+        fields.put("首次出现时间", formatTimestamp(record.getCreatedAt()));
+        fields.put("最近出现时间", formatTimestamp(record.getUpdatedAt()));
+        return fields;
+    }
+
+    private String maskToken(String value) {
+        if (value == null || value.isBlank()) {
+            return "未配置";
+        }
+        if (value.length() <= 8) {
+            return value.charAt(0) + "***" + value.charAt(value.length() - 1);
+        }
+        return value.substring(0, 4) + "***" + value.substring(value.length() - 4);
     }
 
     // ─── MinDoc 文档级映射表 (mindoc_document_mapping) ───────────────
@@ -379,7 +440,7 @@ public class LarkBitableService {
         LocalDate start = today.minusDays(Math.max(1, days) - 1L);
         List<AppTableRecord> qaRecords = safeSearch(appToken, qaTableId);
         List<AppTableRecord> feedbackRecords = safeSearch(appToken, feedbackTableId);
-        List<AppTableRecord> missRecords = safeSearch(operationAppToken, missTableId);
+        List<AppTableRecord> missRecords = safeSearch(missAppToken, missTableId);
         List<AppTableRecord> reviewRecords = safeSearch(operationAppToken, reviewTableId);
         List<AppTableRecord> syncRecords = safeSearch(operationAppToken, syncTableId);
 
@@ -867,7 +928,7 @@ public class LarkBitableService {
      * 只生成问题结构，不自动编写答案；管理员确认并补全答案后再入库 WISE FAQ。
      */
     public List<FaqDraftRecord> createFaqDraftsFromMissQuestions(int missThreshold) {
-        if (!isConfigured(operationAppToken, missTableId)
+        if (!isConfigured(missAppToken, missTableId)
                 || !isConfigured(operationAppToken, faqDraftTableId)) {
             log.debug("miss_question 或 faq_draft 表未配置，跳过未命中 FAQ 草稿生成");
             return List.of();
@@ -875,7 +936,7 @@ public class LarkBitableService {
 
         List<FaqDraftRecord> created = new ArrayList<>();
         try {
-            for (AppTableRecord item : searchRecords(operationAppToken, missTableId, null, 500)) {
+            for (AppTableRecord item : searchRecords(missAppToken, missTableId, null, 500)) {
                 Map<String, Object> fields = item.getFields();
                 int count = readInt(firstFieldValue(fields, "出现次数", "count"), 0);
                 String status = fieldTextAny(fields, "状态", "status");
@@ -1472,7 +1533,7 @@ public class LarkBitableService {
 
     private AppTableRecord findMissRecord(String normalizedQuestion) {
         try {
-            for (AppTableRecord item : searchRecords(operationAppToken, missTableId,
+            for (AppTableRecord item : searchRecords(missAppToken, missTableId,
                     filter("标准化问题", normalizedQuestion), 1)) {
                 return item;
             }
