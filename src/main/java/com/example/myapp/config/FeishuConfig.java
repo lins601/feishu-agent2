@@ -55,6 +55,9 @@ public class FeishuConfig {
     @Value("${feishu.feedback.card-actions-enabled:true}")
     private boolean cardActionsEnabled;
 
+    @Value("${feishu.feedback.require-mention-in-group:true}")
+    private boolean requireMentionInGroup;
+
     /**
      * 飞书 API Client（用于主动发消息、回复等）。
      */
@@ -110,6 +113,20 @@ public class FeishuConfig {
                 });
         }
 
+        builder.onP2ChatMemberBotAddedV1(new ImService.P2ChatMemberBotAddedV1Handler() {
+            @Override
+            public void handle(P2ChatMemberBotAddedV1 event) {
+                handleBotAdded(event, messagePollingService);
+            }
+        });
+
+        builder.onP2ChatMemberBotDeletedV1(new ImService.P2ChatMemberBotDeletedV1Handler() {
+            @Override
+            public void handle(P2ChatMemberBotDeletedV1 event) {
+                handleBotDeleted(event, messagePollingService);
+            }
+        });
+
         if (cardActionsEnabled) {
             builder.onP2CardActionTrigger(new P2CardActionTriggerHandler() {
                     @Override
@@ -154,9 +171,11 @@ public class FeishuConfig {
             String content = message.getContent();
             String parentId = message.getParentId();
             String createTime = message.getCreateTime();
+            boolean groupMessage = !"p2p".equals(chatType);
+            boolean mentioned = !groupMessage || hasMention(message.getMentions(), content);
 
             // 群聊消息需先清除 @mention 标签
-            if (!"p2p".equals(chatType)) {
+            if (groupMessage) {
                 content = stripMentions(content, message.getMentions());
             }
 
@@ -168,6 +187,16 @@ public class FeishuConfig {
 
             if (textContent.isEmpty()) {
                 log.info("消息内容为空，跳过");
+                return;
+            }
+
+            if (groupMessage) {
+                pollingService.registerGroupChatForFeedback(chatId, "message_event");
+            } else {
+                pollingService.registerChatForFeedback(chatId, "message_event");
+            }
+            if (requireMentionInGroup && groupMessage && !mentioned) {
+                log.info("群聊消息未 @ 机器人，跳过处理: chatId={}, messageId={}", chatId, messageId);
                 return;
             }
 
@@ -197,6 +226,28 @@ public class FeishuConfig {
 
         } catch (Exception e) {
             log.error("处理进入会话事件异常", e);
+        }
+    }
+
+    private void handleBotAdded(P2ChatMemberBotAddedV1 event, MessagePollingService pollingService) {
+        try {
+            String chatId = event.getEvent().getChatId();
+            String groupName = event.getEvent().getName();
+            log.info("机器人被加入群聊: chatId={}, name={}", chatId, groupName);
+            pollingService.registerGroupChatForFeedback(chatId, "bot_added:" + groupName);
+        } catch (Exception e) {
+            log.error("处理机器人入群事件异常", e);
+        }
+    }
+
+    private void handleBotDeleted(P2ChatMemberBotDeletedV1 event, MessagePollingService pollingService) {
+        try {
+            String chatId = event.getEvent().getChatId();
+            String groupName = event.getEvent().getName();
+            log.info("机器人被移出群聊: chatId={}, name={}", chatId, groupName);
+            pollingService.unregisterChatForFeedback(chatId, "bot_deleted:" + groupName);
+        } catch (Exception e) {
+            log.error("处理机器人退群事件异常", e);
         }
     }
 
@@ -251,6 +302,13 @@ public class FeishuConfig {
                 .replaceAll("@_all", "");
 
         return contentJson;
+    }
+
+    private boolean hasMention(MentionEvent[] mentions, String contentJson) {
+        if (mentions != null && mentions.length > 0) {
+            return true;
+        }
+        return contentJson != null && (contentJson.contains("@_user_") || contentJson.contains("@_all"));
     }
 
     private String extractText(String contentJson) {

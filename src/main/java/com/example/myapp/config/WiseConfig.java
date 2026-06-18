@@ -38,6 +38,12 @@ public class WiseConfig {
     @Value("${wise.agent-id:}")
     private String agentId;
 
+    @Value("${wise.knowledge-base-id:}")
+    private String knowledgeBaseId;
+
+    @Value("${wise.faq.knowledge-base-id:}")
+    private String faqKnowledgeBaseId;
+
     /**
      * WISE API 专用 OkHttpClient。
      * 自动添加 x-api-key header。
@@ -72,5 +78,7 @@ public class WiseConfig {
     public String getApiUrl() { return apiUrl; }
     public String getApiKey() { return apiKey; }
     public String getAgentId() { return agentId; }
+    public String getKnowledgeBaseId() { return knowledgeBaseId; }
+    public String getFaqKnowledgeBaseId() { return faqKnowledgeBaseId; }
     public int getMaxRetries() { return maxRetries; }
 }

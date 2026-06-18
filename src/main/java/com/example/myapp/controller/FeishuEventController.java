@@ -2,10 +2,12 @@ package com.example.myapp.controller;
 
 import com.example.myapp.config.FeishuConfig;
 import com.example.myapp.service.FeishuMessageService;
+import com.example.myapp.service.MessagePollingService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,13 +30,22 @@ public class FeishuEventController {
 
     private final FeishuConfig feishuConfig;
     private final FeishuMessageService feishuMessageService;
+    private final MessagePollingService messagePollingService;
     private final ObjectMapper objectMapper;
+
+    @Value("${feishu.feedback.wise-only:true}")
+    private boolean wiseOnlyFeedbackMode;
+
+    @Value("${feishu.feedback.require-mention-in-group:true}")
+    private boolean requireMentionInGroup;
 
     public FeishuEventController(FeishuConfig feishuConfig,
                                   FeishuMessageService feishuMessageService,
+                                  MessagePollingService messagePollingService,
                                   ObjectMapper objectMapper) {
         this.feishuConfig = feishuConfig;
         this.feishuMessageService = feishuMessageService;
+        this.messagePollingService = messagePollingService;
         this.objectMapper = objectMapper;
     }
 
@@ -96,6 +107,8 @@ public class FeishuEventController {
             switch (eventType) {
                 case "im.message.receive_v1" -> handleReceiveMessage(root);
                 case "im.chat.access_event.bot_p2p_chat_entered_v1" -> handleBotP2pChatEntered(root);
+                case "im.chat.member.bot.added_v1" -> handleBotAdded(root);
+                case "im.chat.member.bot.deleted_v1" -> handleBotDeleted(root);
                 default -> log.info("忽略未处理的事件类型: {}", eventType);
             }
 
@@ -117,10 +130,18 @@ public class FeishuEventController {
             String messageId = event.path("message").path("message_id").asText("");
             String msgType = event.path("message").path("msg_type").asText("");
             String chatId = event.path("message").path("chat_id").asText("");
+            String createTime = event.path("message").path("create_time").asText("");
+            String parentId = event.path("message").path("parent_id").asText("");
+            if (parentId.isBlank()) {
+                parentId = event.path("message").path("root_id").asText("");
+            }
 
             String openId = event.path("sender").path("sender_id").path("open_id").asText("");
 
-            String textContent = extractTextContent(event.path("message").path("content").asText(""));
+            String contentJson = event.path("message").path("content").asText("");
+            boolean groupMessage = !"p2p".equals(chatType);
+            boolean mentioned = !groupMessage || hasMention(event.path("message").path("mentions"), contentJson);
+            String textContent = extractTextContent(contentJson);
 
             log.info("收到消息: chatType={}, msgType={}, openId={}, text={}",
                     chatType, msgType, openId, textContent);
@@ -130,7 +151,20 @@ public class FeishuEventController {
                 return;
             }
 
-            feishuMessageService.handleUserMessage(openId, chatId, chatType, messageId, textContent);
+            if (groupMessage) {
+                messagePollingService.registerGroupChatForFeedback(chatId, "http_message_event");
+            } else {
+                messagePollingService.registerChatForFeedback(chatId, "http_message_event");
+            }
+            if (requireMentionInGroup && groupMessage && !mentioned) {
+                log.info("HTTP 群聊消息未 @ 机器人，跳过处理: chatId={}, messageId={}", chatId, messageId);
+                return;
+            }
+            if (wiseOnlyFeedbackMode && "text".equals(msgType)) {
+                messagePollingService.scheduleFeedbackCard(chatId, messageId, textContent, createTime, openId, parentId);
+                return;
+            }
+            feishuMessageService.handleUserMessage(openId, chatId, chatType, messageId, textContent, parentId);
 
         } catch (Exception e) {
             log.error("处理接收消息事件异常", e);
@@ -151,14 +185,49 @@ public class FeishuEventController {
         }
     }
 
+    private void handleBotAdded(JsonNode root) {
+        try {
+            JsonNode event = root.path("event");
+            String chatId = event.path("chat_id").asText("");
+            String name = event.path("name").asText("");
+            log.info("HTTP 回调：机器人被加入群聊: chatId={}, name={}", chatId, name);
+            messagePollingService.registerGroupChatForFeedback(chatId, "http_bot_added:" + name);
+        } catch (Exception e) {
+            log.error("处理机器人入群 HTTP 事件异常", e);
+        }
+    }
+
+    private void handleBotDeleted(JsonNode root) {
+        try {
+            JsonNode event = root.path("event");
+            String chatId = event.path("chat_id").asText("");
+            String name = event.path("name").asText("");
+            log.info("HTTP 回调：机器人被移出群聊: chatId={}, name={}", chatId, name);
+            messagePollingService.unregisterChatForFeedback(chatId, "http_bot_deleted:" + name);
+        } catch (Exception e) {
+            log.error("处理机器人退群 HTTP 事件异常", e);
+        }
+    }
+
     private String extractTextContent(String contentJson) {
         try {
             if (contentJson == null || contentJson.isEmpty()) return "";
             JsonNode contentNode = objectMapper.readTree(contentJson);
-            return contentNode.path("text").asText("").trim();
+            return contentNode.path("text").asText("")
+                    .replaceAll("@_user_\\d+", "")
+                    .replaceAll("@_all", "")
+                    .replaceAll("\\s+", " ")
+                    .trim();
         } catch (Exception e) {
             log.warn("解析消息内容失败: {}", contentJson);
             return "";
         }
+    }
+
+    private boolean hasMention(JsonNode mentions, String contentJson) {
+        if (mentions != null && mentions.isArray() && !mentions.isEmpty()) {
+            return true;
+        }
+        return contentJson != null && (contentJson.contains("@_user_") || contentJson.contains("@_all"));
     }
 }

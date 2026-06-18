@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 V3 批量爬取 + 上传 + 性能对比记录
-自动遍历第2页 10 个项目，逐个爬取并上传到 WISE，记录各阶段耗时用于 V2 vs V3 对比。
+自动遍历 docs.cvte.com 全部 28 个项目，逐个爬取并上传到 WISE，记录各阶段耗时。
 """
 
 import json
@@ -23,13 +23,33 @@ WISE_KB_ID = "2fe60de0-3c43-4edb-aeff-7990519e3459"
 SCRIPT = str(Path(__file__).parent / "crawl_mindoc_wise_v3.py")
 OUTPUT_BASE = str(Path(__file__).parent.parent / "knowledge-base")
 
-# 第2页的 10 个项目
+# 全部 28 个项目（第1页 18 + 第2页 10）
 PROJECTS = [
+    # ---- 第1页 ----
+    ("dap", "行政餐饮运维知识库", "https://docs.cvte.com/docs/dap"),
+    ("wmp", "wmp运维文档", "https://docs.cvte.com/docs/wmp"),
+    ("cplm-doc", "研发运维知识库", "https://docs.cvte.com/docs/cplm-doc"),
+    ("dp_ai_ops", "平台统一问答运维助手", "https://docs.cvte.com/docs/dp_ai_ops"),
+    ("taskDeck", "任务同步平台", "https://docs.cvte.com/docs/taskDeck"),
+    ("dp-i18n", "多语言集成", "https://docs.cvte.com/docs/dp-i18n"),
+    ("tzc_wf_integrate", "天舟云集成流程", "https://docs.cvte.com/docs/tzc_wf_integrate"),
+    ("tz-mobile", "移动端tz-mobile", "https://docs.cvte.com/docs/tz-mobile"),
+    ("cos", "cosp对接文档", "https://docs.cvte.com/docs/cos"),
+    ("aiops", "AIOPS项目文档", "https://docs.cvte.com/docs/aiops"),
+    ("hw_lcp_deps_help", "华外天舟云私有化部署运维手册", "https://docs.cvte.com/docs/hw_lcp_deps_help"),
+    ("tzc_qa", "天舟云咨询问答", "https://docs.cvte.com/docs/tzc_qa"),
+    ("mes-01", "MES产品手册", "https://docs.cvte.com/docs/mes-01"),
+    ("tzdoc_v2", "天舟云运维文档", "https://docs.cvte.com/docs/tzdoc_v2"),
+    ("tzserver_v2", "天舟云帮助文档Plus", "https://docs.cvte.com/docs/tzserver_v2"),
+    ("tzc_open_platform", "天舟云开放平台", "https://docs.cvte.com/docs/tzc_open_platform"),
+    ("eus-operation-manual", "万象操作手册", "https://docs.cvte.com/docs/eus-operation-manual"),
+    ("oa", "OA", "https://docs.cvte.com/docs/oa"),
+    # ---- 第2页 ----
     ("csb", "CSB", "https://docs.cvte.com/docs/csb"),
     ("plateform_dev_rule", "开发规范文档", "https://docs.cvte.com/docs/plateform_dev_rule"),
     ("unify_todo", "统一待办", "https://docs.cvte.com/docs/unify_todo"),
     ("tzv16", "天舟云帮助文档_2023", "https://docs.cvte.com/docs/tzv16"),
-    ("portal", "【门户】帮助文档", "https://docs.cvte.com/docs/portal"),
+    ("portal", "门户帮助文档", "https://docs.cvte.com/docs/portal"),
     ("fee", "天舟云-前端工程化", "https://docs.cvte.com/docs/fee"),
     ("khronos", "通用业务配置-柯罗诺斯", "https://docs.cvte.com/docs/khronos"),
     ("event_bus", "消息总线", "https://docs.cvte.com/docs/event-bus"),

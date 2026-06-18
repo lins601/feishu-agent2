@@ -65,6 +65,9 @@ public class MindocDocumentMapping {
     /** 失败原因 */
     private String errorMessage;
 
+    /** 是否已在本轮 MinDoc 巡检中失效 */
+    private Boolean expired;
+
     // ─── Constructors ─────────────────────────────────────
 
     public MindocDocumentMapping() {}
@@ -136,4 +139,7 @@ public class MindocDocumentMapping {
 
     public String getErrorMessage() { return errorMessage; }
     public void setErrorMessage(String errorMessage) { this.errorMessage = errorMessage; }
+
+    public Boolean getExpired() { return expired; }
+    public void setExpired(Boolean expired) { this.expired = expired; }
 }
