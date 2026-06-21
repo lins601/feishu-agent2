@@ -17,7 +17,9 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -56,6 +58,8 @@ public class FeishuMessageService {
     private final ConcurrentHashMap<String, QaContext> replyMessageContext = new ConcurrentHashMap<>();
     // "chatId_userId" → 该用户最近的 QA 上下文列表（优先级 3 使用）
     private final ConcurrentHashMap<String, List<QaContext>> userRecentQa = new ConcurrentHashMap<>();
+    // 防止同一反馈按钮被连点时并发写入多维表格。
+    private final Set<String> feedbackInFlight = ConcurrentHashMap.newKeySet();
 
     public FeishuMessageService(Client feishuClient, KnowledgeAssistantAgent agent,
                                  LarkBitableService bitableService) {
@@ -359,6 +363,11 @@ public class FeishuMessageService {
 
         log.info("卡片按钮反馈: qa_id={}, user={}, feedback={}", qaId, openId, feedbackType);
 
+        String feedbackKey = qaId + "_" + openId;
+        if (!feedbackInFlight.add(feedbackKey)) {
+            return feedbackToast("info", "反馈正在记录，请勿重复点击。");
+        }
+
         // 写入反馈记录（异步）
         FeedbackRecord record = FeedbackRecord.builder()
                 .feedbackId(LarkBitableService.generateId("fb"))
@@ -372,6 +381,9 @@ public class FeishuMessageService {
                 .build();
 
         bitableService.handleFeedback(record);
+        // 多维表格写入会在后台完成；短暂防抖可避免飞书重复回调或用户连点造成并发写入。
+        CompletableFuture.delayedExecutor(10, TimeUnit.SECONDS)
+                .execute(() -> feedbackInFlight.remove(feedbackKey));
         return feedbackToast("success",
                 "useful".equals(feedbackType) ? "感谢您的反馈！👍" : "感谢您的反馈，我们会持续优化知识库 📝");
     }

@@ -63,6 +63,7 @@ public class MessagePollingService {
     private static final int PAGE_SIZE = 50;
     private static final int SEND_MAX_ATTEMPTS = 3;
     private static final long PROCESSED_TTL_MS = 24 * 60 * 60 * 1000L;
+    private static final int MAX_ANSWER_RECORD_LENGTH = 5000;
     private static final Pattern KNOWLEDGE_FILE_PATTERN =
             Pattern.compile("[A-Za-z0-9_./-]+\\.(?:md|pdf|docx?|xlsx?)");
     private static final Pattern KNOWLEDGE_SOURCE_LINE_PATTERN =
@@ -140,10 +141,10 @@ public class MessagePollingService {
     @Value("${feishu.feedback.permission-fallback.delay-ms:12000}")
     private long permissionFallbackDelayMs;
 
-    @Value("${feishu.feedback.record-opaque-wise-as-miss:true}")
+    @Value("${feishu.feedback.record-opaque-wise-as-miss:false}")
     private boolean recordOpaqueWiseAsMiss;
 
-    @Value("${feishu.feedback.wise-ocr-enabled:false}")
+    @Value("${feishu.feedback.wise-ocr-enabled:true}")
     private boolean wiseOcrEnabled;
 
     public MessagePollingService(Client feishuClient,
@@ -436,7 +437,7 @@ public class MessagePollingService {
     }
 
     /**
-     * 等待关联的机器人回复出现并停止更新。只要检测到 WISE 开始回复，最终都尝试发送反馈卡片。
+     * 等待关联的机器人回复出现并停止更新，避免在 WISE 流式回答中途发送反馈卡片。
      */
     private void monitorReplyAndSendCard(String monitorChatId, String userMessageId,
                                          long questionCreateTime, String question, String userId) {
@@ -499,7 +500,8 @@ public class MessagePollingService {
                     if (!answerOcrText.isBlank()) {
                         answerDetectionText = answerDetectionText + " " + answerOcrText;
                         if (answerSummary == null || answerSummary.isBlank()) {
-                            answerSummary = truncate(answerOcrText.replaceAll("\\s+", " ").trim(), 300);
+                            answerSummary = truncate(answerOcrText.replaceAll("\\s+", " ").trim(),
+                                    MAX_ANSWER_RECORD_LENGTH);
                         }
                     }
                 }

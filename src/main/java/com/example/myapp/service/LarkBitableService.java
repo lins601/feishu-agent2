@@ -165,6 +165,8 @@ public class LarkBitableService {
         }
 
         Map<String, Object> fields = new LinkedHashMap<>();
+        // 飞书多维表格的首列为主字段，当前表结构中名称为“多行文本”。
+        fields.put("多行文本", record.getQuestion());
         fields.put("问答ID", record.getQaId());
         fields.put("消息ID", record.getMessageId());
         fields.put("群聊ID", record.getChatId());
@@ -207,6 +209,8 @@ public class LarkBitableService {
 
             // 2. 写入 feedback_record
             Map<String, Object> fields = new LinkedHashMap<>();
+            // feedback_record 的主字段为“多行文本”，未传该字段会导致飞书拒绝创建记录。
+            fields.put("多行文本", record.getQuestion());
             fields.put("反馈ID", record.getFeedbackId());
             fields.put("问答ID", record.getQaId());
             fields.put("用户ID", record.getUserId());
