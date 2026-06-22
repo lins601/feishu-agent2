@@ -46,7 +46,8 @@ public class KnowledgeAssistantAgent {
 
         try {
             // 直接调用 WISE 智能体
-            String answer = wiseAgentService.chat(question);
+            WiseAgentService.ChatResult result = wiseAgentService.chatWithAssets(question);
+            String answer = result.answer();
 
             long elapsed = System.currentTimeMillis() - start;
 
@@ -56,7 +57,9 @@ public class KnowledgeAssistantAgent {
             }
 
             log.info("Agent 处理完成: answerLength={}, 耗时={}ms", answer.length(), elapsed);
-            return AgentResponse.success(answer);
+            AgentResponse response = AgentResponse.success(answer);
+            response.setImageDataUris(result.imageDataUris());
+            return response;
 
         } catch (Exception e) {
             log.error("Agent 处理异常: question={}", question, e);

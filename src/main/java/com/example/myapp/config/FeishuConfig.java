@@ -203,7 +203,7 @@ public class FeishuConfig {
                 return;
             }
 
-            if ("text".equals(msgType)) {
+            if (wiseOnlyFeedbackMode && "text".equals(msgType)) {
                 pollingService.scheduleFeedbackCard(chatId, messageId, textContent, createTime, openId, parentId);
             }
 

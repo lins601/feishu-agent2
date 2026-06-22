@@ -16,11 +16,16 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Base64;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * 飞书消息服务 — 接收消息 → 调用 Agent → 回复飞书 → 记录运营数据。
@@ -48,6 +53,11 @@ public class FeishuMessageService {
 
     /** QA 上下文过期时间：5 分钟（毫秒） */
     private static final long QA_CONTEXT_TTL_MS = 5 * 60 * 1000L;
+    /** WISE 答案内的 Markdown 图片占位。图片需在同一位置替换成飞书 img 元素。 */
+    private static final Pattern MARKDOWN_IMAGE = Pattern.compile("!\\[([^]]*)]\\(([^)]+)\\)");
+    /** WISE 明确表示当前知识库未覆盖时的常见措辞，仅用于展示“确认未命中”按钮。 */
+    private static final Pattern LIKELY_KNOWLEDGE_MISS = Pattern.compile(
+            "(?is)(知识库.{0,20}(没有|未收录|不存在|不包含|无相关)|超出.{0,12}知识库.{0,12}(范围|覆盖)|无法提供.{0,16}(可靠|可验证).{0,12}(解答|答案)|暂未.{0,12}(收录|覆盖|找到))");
 
     private final Client feishuClient;
     private final KnowledgeAssistantAgent agent;
@@ -138,7 +148,8 @@ public class FeishuMessageService {
             long elapsed = System.currentTimeMillis() - start;
 
             // 5. 缓存 QA 上下文（用于后续文本反馈关联）
-            String answerSummary = truncate(response.getAnswerText(), 200);
+            // 表格保留较完整的 WISE 最终回答，便于后续检索与追溯。
+            String answerSummary = truncate(response.getAnswerText(), 5000);
             String knowledgeRefs = "";
             if (botReplyMessageId != null) {
                 QaContext ctx = new QaContext(qaId, textContent, answerSummary, knowledgeRefs,
@@ -368,6 +379,26 @@ public class FeishuMessageService {
             return feedbackToast("info", "反馈正在记录，请勿重复点击。");
         }
 
+        // “该知识暂不存在”由用户确认后才写未命中表，避免模型自身误判直接污染运营数据。
+        if ("knowledge_missing".equals(feedbackType)) {
+            long now = Instant.now().toEpochMilli();
+            MissRecord missRecord = MissRecord.builder()
+                    .question(question)
+                    .normalizedQuestion(question)
+                    .count(1)
+                    .status("pending")
+                    .userId(openId)
+                    .chatId("")
+                    .owner("")
+                    .createdAt(now)
+                    .updatedAt(now)
+                    .build();
+            bitableService.saveMissRecord(missRecord);
+            CompletableFuture.delayedExecutor(10, TimeUnit.SECONDS)
+                    .execute(() -> feedbackInFlight.remove(feedbackKey));
+            return feedbackToast("success", "已记录为未命中问题，管理员会补充知识库。📝");
+        }
+
         // 写入反馈记录（异步）
         FeedbackRecord record = FeedbackRecord.builder()
                 .feedbackId(LarkBitableService.generateId("fb"))
@@ -525,15 +556,30 @@ public class FeishuMessageService {
 
         var contentElement = new LinkedHashMap<String, Object>();
         contentElement.put("tag", "markdown");
-        contentElement.put("content", response.getAnswerText());
-        elements.add(contentElement);
+        String rawAnswer = response.getAnswerText() == null ? "" : response.getAnswerText();
+        int expectedImageCount = countMarkdownImages(rawAnswer);
+        boolean answerReferencesImages = expectedImageCount > 0;
+        List<String> imageKeys = new ArrayList<>();
+        if (response.getImageDataUris() != null) {
+            for (String imageDataUri : response.getImageDataUris()) {
+                String imageKey = uploadBase64Image(imageDataUri);
+                if (!imageKey.isBlank()) {
+                    imageKeys.add(imageKey);
+                }
+            }
+        }
 
-        var card = new LinkedHashMap<String, Object>();
-        // 不使用 schema 2.0，兼容性更好
+        // 正确性优先：WISE 回答明确含图而图片未同步成功时，绝不能发一份缺图的“完整答案”。
+        if (answerReferencesImages && imageKeys.size() < expectedImageCount) {
+            contentElement.put("content", "⚠️ 本答案引用了知识库图片，但图片同步到飞书失败。为避免缺图导致操作错误，正文未发布；请稍后重试。管理员可在问答记录中查看原始答案并排查图片同步日志。");
+            elements.add(contentElement);
+            return buildCard("⚠️ 制造知识助手（图片同步失败）", "orange", elements);
+        }
 
-        var header = new LinkedHashMap<String, Object>();
-        var titleObj = new LinkedHashMap<String, Object>();
-        titleObj.put("tag", "plain_text");
+        // 逐个用飞书 img_key 替换 WISE 的 Markdown 图片占位，保持“文字解释 → 图片”的原始顺序。
+        appendAnswerElements(elements, rawAnswer, imageKeys);
+        boolean likelyKnowledgeMiss = response.isSuccess() && isLikelyKnowledgeMiss(rawAnswer);
+        elements.add(buildFeedbackAction(qaId, question, truncate(response.getAnswerText(), 5000), likelyKnowledgeMiss));
 
         String headerTitle;
         String template;
@@ -547,7 +593,14 @@ public class FeishuMessageService {
             headerTitle = "📋 制造知识助手";
             template = "blue";
         }
+        return buildCard(headerTitle, template, elements);
+    }
 
+    private String buildCard(String headerTitle, String template, List<Map<String, Object>> elements) {
+        var card = new LinkedHashMap<String, Object>();
+        var header = new LinkedHashMap<String, Object>();
+        var titleObj = new LinkedHashMap<String, Object>();
+        titleObj.put("tag", "plain_text");
         titleObj.put("content", headerTitle);
         header.put("title", titleObj);
         header.put("template", template);
@@ -557,14 +610,72 @@ public class FeishuMessageService {
         try {
             return new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(card);
         } catch (Exception e) {
-            return buildFallbackTextCard(response.getAnswerText());
+            return buildFallbackTextCard("卡片构建失败，请稍后重试。");
         }
+    }
+
+    private int countMarkdownImages(String markdown) {
+        if (markdown == null) return 0;
+        int count = 0;
+        Matcher matcher = MARKDOWN_IMAGE.matcher(markdown);
+        while (matcher.find()) count++;
+        return count;
+    }
+
+    private void appendAnswerElements(List<Map<String, Object>> elements, String rawAnswer, List<String> imageKeys) {
+        String answerForCard = truncate(rawAnswer, 5000);
+        Matcher matcher = MARKDOWN_IMAGE.matcher(answerForCard);
+        int textStart = 0;
+        int imageIndex = 0;
+        while (matcher.find()) {
+            addMarkdownElement(elements, answerForCard.substring(textStart, matcher.start()));
+            String alt = matcher.group(1).isBlank() ? "知识库图片" : matcher.group(1);
+            addImageElement(elements, imageKeys.get(imageIndex++), alt);
+            textStart = matcher.end();
+        }
+        String tail = answerForCard.substring(textStart);
+        if (rawAnswer.length() > answerForCard.length()) {
+            tail += "\n\n> 回答较长，完整内容已存入多维表格。";
+        }
+        addMarkdownElement(elements, tail);
+    }
+
+    private void addMarkdownElement(List<Map<String, Object>> elements, String content) {
+        if (content == null || content.isBlank()) return;
+        var markdown = new LinkedHashMap<String, Object>();
+        markdown.put("tag", "markdown");
+        markdown.put("content", normalizeMarkdownForFeishu(content));
+        elements.add(markdown);
+    }
+
+    /** 飞书卡片对 ATX 标题兼容性不一致，统一呈现为加粗标题，避免用户看到 #。 */
+    private String normalizeMarkdownForFeishu(String content) {
+        Matcher heading = Pattern.compile("(?m)^#{1,6}\\s+(.+?)\\s*$").matcher(content.trim());
+        StringBuffer formatted = new StringBuffer();
+        while (heading.find()) {
+            heading.appendReplacement(formatted, Matcher.quoteReplacement("**" + heading.group(1).trim() + "**"));
+        }
+        heading.appendTail(formatted);
+        return formatted.toString();
+    }
+
+    private boolean isLikelyKnowledgeMiss(String answer) {
+        return answer != null && LIKELY_KNOWLEDGE_MISS.matcher(answer).find();
+    }
+
+    private void addImageElement(List<Map<String, Object>> elements, String imageKey, String alt) {
+        var image = new LinkedHashMap<String, Object>();
+        image.put("tag", "img");
+        image.put("img_key", imageKey);
+        image.put("alt", Map.of("tag", "plain_text", "content", alt));
+        elements.add(image);
     }
 
     /**
      * 构建反馈按钮区域（schema 1.0 格式：action 包裹按钮）。
      */
-    private Map<String, Object> buildFeedbackAction(String qaId, String question, String answerSummary) {
+    private Map<String, Object> buildFeedbackAction(String qaId, String question, String answerSummary,
+                                                     boolean likelyKnowledgeMiss) {
         var action = new LinkedHashMap<String, Object>();
         action.put("tag", "action");
 
@@ -602,6 +713,20 @@ public class FeishuMessageService {
         uselessBtn.put("value", uselessValue);
         actions.add(uselessBtn);
 
+        if (likelyKnowledgeMiss) {
+            var missingBtn = new LinkedHashMap<String, Object>();
+            missingBtn.put("tag", "button");
+            missingBtn.put("text", Map.of("tag", "plain_text", "content", "📝 该知识暂不存在"));
+            var missingValue = new LinkedHashMap<String, Object>();
+            missingValue.put("action", "feedback");
+            missingValue.put("qa_id", qaId);
+            missingValue.put("feedback", "knowledge_missing");
+            missingValue.put("question", question);
+            missingValue.put("answer_summary", answerSummary);
+            missingBtn.put("value", missingValue);
+            actions.add(missingBtn);
+        }
+
         action.put("actions", actions);
         return action;
     }
@@ -609,6 +734,38 @@ public class FeishuMessageService {
     private String buildFallbackTextCard(String text) {
         return "{\"header\":{\"title\":{\"tag\":\"plain_text\",\"content\":\"制造知识助手\"},\"template\":\"blue\"},\"elements\":[{\"tag\":\"markdown\",\"content\":\"" +
                 escapeJson(text) + "\"}]}";
+    }
+
+    private String uploadBase64Image(String dataUri) {
+        try {
+            return CompletableFuture.supplyAsync(() -> uploadBase64ImageBlocking(dataUri))
+                    .get(5, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            log.warn("上传知识库图片超时或失败，跳过图片以保证正文及时回复", e);
+            return "";
+        }
+    }
+
+    private String uploadBase64ImageBlocking(String dataUri) {
+        try {
+            int comma = dataUri.indexOf(',');
+            if (comma < 0) return "";
+            String mediaType = dataUri.substring(5, dataUri.indexOf(';')).toLowerCase(Locale.ROOT);
+            String suffix = mediaType.contains("jpeg") || mediaType.contains("jpg") ? ".jpg"
+                    : mediaType.contains("gif") ? ".gif" : ".png";
+            Path file = Files.createTempFile("wise-image-", suffix);
+            Files.write(file, Base64.getMimeDecoder().decode(dataUri.substring(comma + 1)));
+            try {
+                var req = CreateImageReq.newBuilder().createImageReqBody(CreateImageReqBody.newBuilder()
+                        .imageType("message").image(file.toFile()).build()).build();
+                var resp = feishuClient.im().image().create(req);
+                return resp != null && resp.getCode() == 0 && resp.getData() != null
+                        ? resp.getData().getImageKey() : "";
+            } finally { Files.deleteIfExists(file); }
+        } catch (Exception e) {
+            log.warn("上传知识库图片到飞书失败", e);
+            return "";
+        }
     }
 
     private String buildWelcomeCard() {

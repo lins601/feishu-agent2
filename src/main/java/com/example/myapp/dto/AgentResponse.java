@@ -3,6 +3,7 @@ package com.example.myapp.dto;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import java.util.List;
 
 /**
  * Agent 输出结构。
@@ -20,6 +21,9 @@ public class AgentResponse {
 
     /** 是否为降级回复 */
     private boolean degraded;
+
+    /** 从引用知识原文提取出的 Base64 图片。 */
+    private List<String> imageDataUris;
 
     /**
      * 构建成功响应。

@@ -4,6 +4,7 @@ import com.example.myapp.service.FeishuMessageService;
 import com.example.myapp.service.LarkBitableService;
 import com.example.myapp.service.MessagePollingService;
 import com.example.myapp.service.MindocSyncScheduler;
+import com.example.myapp.service.WiseAgentService;
 import com.example.myapp.model.MissRecord;
 import com.example.myapp.model.QuestionRecord;
 import com.example.myapp.dto.AgentResponse;
@@ -36,19 +37,32 @@ public class DebugController {
     private final FeishuMessageService messageService;
     private final MessagePollingService messagePollingService;
     private final MindocSyncScheduler mindocSyncScheduler;
+    private final WiseAgentService wiseAgentService;
     private final Environment env;
 
     public DebugController(Client feishuClient, LarkBitableService bitableService,
                            FeishuMessageService messageService,
                            MessagePollingService messagePollingService,
-                           MindocSyncScheduler mindocSyncScheduler,
+                           MindocSyncScheduler mindocSyncScheduler, WiseAgentService wiseAgentService,
                            Environment env) {
         this.feishuClient = feishuClient;
         this.bitableService = bitableService;
         this.messageService = messageService;
         this.messagePollingService = messagePollingService;
         this.mindocSyncScheduler = mindocSyncScheduler;
+        this.wiseAgentService = wiseAgentService;
         this.env = env;
+    }
+
+    /** 直接验证当前配置能否调用 WISE Agent；仅用于本地排障。 */
+    @GetMapping("/test-wise-agent")
+    public Map<String, Object> testWiseAgent(@RequestParam(defaultValue = "请用一句话回答：测试连接是否成功？") String question) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("configured", wiseAgentService.isConfigured());
+        String answer = wiseAgentService.chatForDiagnosis(question);
+        result.put("answer", answer);
+        result.put("answerLength", answer != null ? answer.length() : 0);
+        return result;
     }
 
     /**
